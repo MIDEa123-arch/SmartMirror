@@ -1,0 +1,36 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const code = fs.readFileSync('node-red/state.js','utf8');
+let clock = Date.parse('2026-10-23T12:00:00Z');
+class Clock extends Date { static now() { return clock; } }
+const stores = new Map();
+const flow = { get:(k,store='memory')=>stores.get(store+':'+k),set:(k,v,store='memory')=>stores.set(store+':'+k,v) };
+function run(msg) { return vm.runInNewContext('(function(){'+code+'\n})()', {msg,flow,Buffer,Date:Clock}); }
+const mqtt = (tail,payload,retain=false)=>run({topic:'smartmirror/demo01/'+tail,payload,retain});
+const ui = p=>run({topic:'ui',payload:p});
+assert.equal(ui({action:'control',key:'fan',value:'ON'})[1],null);
+run({topic:'broker',payload:true}); mqtt('status','online');
+mqtt('sensor/temperature','27');mqtt('sensor/humidity','60'); mqtt('state/active','ACTIVE');mqtt('state/mode','MANUAL');
+let out=ui({action:'control',key:'fan',value:'ON'});
+assert.equal(out[1].qos,1);assert.equal(out[1].retain,false);
+assert.ok(out[0].payload.pending.fan);
+mqtt('state/fan','ON'); assert.equal(run({topic:'tick'})[0].payload.pending.fan,undefined);
+assert.equal(mqtt('event/page','NEXT')[0].payload.page,1);
+assert.equal(mqtt('event/page','NEXT')[0].payload.page,2);
+assert.equal(mqtt('event/page','NEXT')[0].payload.page,0);
+mqtt('state/active','SLEEP');assert.equal(mqtt('event/page','NEXT')[0].payload.page,0);
+mqtt('state/active','ACTIVE');assert.equal(run({topic:'tick'})[0].payload.page,0);
+assert.equal(ui({action:'control',key:'light',value:256})[1],null);
+clock+=16000;out=run({topic:'tick'});assert.equal(out[0].payload.online,false);assert.equal(out[0].payload.fresh.temperature,false);
+mqtt('sensor/temperature','25',true);assert.equal(run({topic:'tick'})[0].payload.online,false,'Retained reading cannot prove freshness');
+assert.equal(ui({action:'control',key:'mode',value:'AUTO'})[1],null);
+out=ui({action:'search',query:'Da Nang'});assert.match(out[2].url,/geocoding-api/);
+out=ui({action:'location',lat:16.05,lon:108.2,name:'Đà Nẵng'});assert.match(out[2].url,/latitude=16.05/);
+run({kind:'weather',locationKey:'wrong',statusCode:200,payload:{current:{temperature_2m:25},daily:{time:[]}}});assert.equal(run({topic:'tick'})[0].payload.weather,null);
+run({kind:'weather',locationKey:'16.05,108.2',statusCode:200,payload:{current:{temperature_2m:25},daily:{time:[]}}});assert.ok(run({topic:'tick'})[0].payload.weather);
+ui({action:'addTask',title:'Họp',at:new Date(clock+600000).toISOString()});
+out=run({topic:'tick'});assert.equal(out[0].payload.reminders.length,1);
+assert.equal(stores.get('file:preferences').tasks.length,1);
+flow.set('mirror',null);out=run({topic:'tick'});assert.equal(out[0].payload.tasks.length,1);assert.equal(out[0].payload.online,false);assert.equal(out[0].payload.active,false);
+console.log('PASS: offline controls, acknowledgement, paging/sleep, validation, stale/retained readings, location/API responses, reminders and persisted preferences');
