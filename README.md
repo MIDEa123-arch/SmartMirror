@@ -8,12 +8,12 @@ Source mô phỏng gương thông minh bằng **ESP32 + Wokwi + MQTT + Node-RED*
 | --- | --- |
 | DHT22 | Đọc nhiệt độ và độ ẩm mỗi 2 giây |
 | HC-SR04 | Đo khoảng cách để bật và giữ sáng đèn gương |
-| PIR | Khi đèn sáng, phát hiện chuyển động để gửi sự kiện NEXT |
+| Nút nhấn GPIO32 | Khi gương ACTIVE, mỗi lần nhấn gửi một NEXT; giữ nút không lặp |
 | LED trắng GPIO26 | Mô phỏng đèn gương, điều chỉnh độ sáng 0–255 |
 | LED xanh GPIO27 | Mô phỏng quạt bật/tắt |
 | MQTT | Truyền dữ liệu và lệnh giữa ESP32 với Node-RED |
 | Node-RED Dashboard | Điều khiển chế độ quạt, công tắc quạt và độ sáng đèn |
-| Node-RED Debug | Xem nhiệt độ, độ ẩm, chuyển động, NEXT và trạng thái thiết bị |
+| Node-RED Debug | Xem nhiệt độ, độ ẩm, NEXT và trạng thái thiết bị |
 
 **Logic hiện tại:**
 
@@ -21,15 +21,15 @@ Source mô phỏng gương thông minh bằng **ESP32 + Wokwi + MQTT + Node-RED*
 - Ra ngoài vùng trên: chờ **120 giây không có hoạt động** rồi SLEEP; không tắt ngay.
 - Quạt AUTO: bật khi **≥ 32°C**, tắt khi **≤ 30°C**; giữa 30–32°C giữ trạng thái trước.
 - Quạt MANUAL: dùng công tắc trên Dashboard.
-- PIR không tự đánh thức gương. Khi gương ACTIVE và đèn có độ sáng lớn hơn 0, PIR HIGH cho phép gửi NEXT tối đa **một lần mỗi giây**, không cần chờ LOW. Nếu HIGH kéo dài, NEXT có thể lặp mỗi giây.
-- PIR chỉ báo chuyển động, không đo khoảng cách và không phân biệt tay với người.
+- Nút nhấn nối GPIO32–GND, dùng INPUT_PULLUP và chống dội 40 ms. Khi gương ACTIVE, mỗi lần nhấn gửi một NEXT, không phụ thuộc độ sáng đèn. Giữ nút không lặp; phải thả rồi nhấn lại.
+- Nút không đánh thức gương đang SLEEP. HC-SR04 vẫn phụ trách bật/giữ gương hoạt động.
 
-**Lưu ý về chuyển trang:** `flows.json` hiện nối sự kiện NEXT vào Debug. Bản source này chưa có màn hình nội dung để tự chuyển trang; demo PIR bằng cách quan sát message `NEXT`. Dashboard đi kèm có các nút điều khiển, còn số đo được xem trong Debug.
+**Lưu ý về chuyển trang:** `flows.json` hiện nối sự kiện NEXT vào Debug. Chưa có màn hình nội dung; hàm `requestNextPage()` chuẩn bị cho phần hiển thị sau này. Sự kiện lúc mất MQTT không được lưu/phát lại. Dashboard đi kèm có các nút điều khiển, còn số đo được xem trong Debug.
 
 ## 2. Các thành phần kết nối như thế nào?
 
 ```text
-DHT22 / HC-SR04 / PIR
+DHT22 / HC-SR04 / Nút nhấn
           ↓
    ESP32 trong Wokwi ───→ LED trắng / LED xanh
           ↕ WiFi + MQTT
@@ -118,11 +118,11 @@ monitor_speed = 115200
 
 lib_deps =
     beegee-tokyo/DHT sensor library for ESPx @ 1.19.0
-    knolleary/PubSubClient
+    256dpi/MQTT @ 2.5.3
     bblanchon/ArduinoJson
 ```
 
-Giữ phiên bản platform đã cố định để chạy theo cấu hình dự án. `WiFi.h` đi kèm framework ESP32, DHTesp và PubSubClient được PlatformIO tải từ `lib_deps`. ArduinoJson hiện có trong dependency nhưng code chưa sử dụng để xử lý dữ liệu.
+Giữ phiên bản platform đã cố định để chạy theo cấu hình dự án. `WiFi.h` đi kèm framework ESP32, DHTesp và MQTT (256dpi) được PlatformIO tải từ `lib_deps`. ArduinoJson hiện có trong dependency nhưng code chưa sử dụng để xử lý dữ liệu.
 
 **Cách build bằng giao diện:**
 
@@ -260,7 +260,6 @@ Quay lại Editor → mở sidebar **Debug** bên phải, biểu tượng con b�
 | --- | --- |
 | debug 1 | Nhiệt độ |
 | debug 2 | Độ ẩm |
-| debug 3 | Chuyển động PIR |
 | debug 4 | Sự kiện NEXT |
 | debug 5 | Trạng thái quạt |
 | debug 6 | ACTIVE/SLEEP |
@@ -315,18 +314,15 @@ DHT22 vẫn được đọc khi gương SLEEP. Payload là chuỗi số đơn gi
 
 Ngưỡng chính xác là **25 ≤ d < 60 cm**. Dùng 40 cm để demo, tránh ngay sát biên. Thay khoảng cách không gửi NEXT.
 
-### 10.3. PIR gửi NEXT
+### 10.3. Nút nhấn gửi NEXT
 
-1. HC-SR04 = **40 cm** để gương ACTIVE.
-2. Slider độ sáng đặt **180**, không để 0.
-3. Đợi `MQTT da ket noi`.
-4. Bấm PIR → **Simulate Motion**.
-5. Serial báo `PIR: NEXT PAGE`; Debug 4 nhận payload **NEXT** ở topic `smartmirror/demo01/event/page`.
-6. Kích hoạt lại cách nhau hơn 1 giây để xem các sự kiện mới.
+1. HC-SR04 = **40 cm** để gương ACTIVE, đợi MQTT kết nối.
+2. Nhấn nút xanh btn1: Serial báo `Button: NEXT PAGE`; Debug 4 nhận `NEXT`.
+3. Giữ nút vài giây: không lặp. Thả rồi nhấn lại để gửi NEXT tiếp theo.
+4. Đèn bằng 0 vẫn gửi NEXT khi ACTIVE; khi SLEEP thì không gửi NEXT.
 
-PIR Wokwi hiện giữ tín hiệu 0,5 giây, có thời gian bỏ qua đầu vào 0,1 giây và tắt retrigger. Các lần bấm trong thời gian bị chặn có thể không tạo tín hiệu mới. Nếu tăng thời gian HIGH thì code có thể phát NEXT mỗi giây suốt thời gian HIGH. [Tài liệu PIR Wokwi](https://docs.wokwi.com/parts/wokwi-pir-motion-sensor).
-
-Khi gương SLEEP hoặc đèn bằng 0, PIR không gửi NEXT. Flow hiện tại chỉ Debug NEXT; không có trang hiển thị nội dung tự đổi.
+Nút nối GPIO32–GND. Giữ nút lúc khởi động cần thả rồi nhấn lại.
+Hiện chưa có màn hình nội dung; hàm `requestNextPage()` là điểm tích hợp sau này.
 
 ### 10.4. Quạt AUTO
 
@@ -352,7 +348,7 @@ Trong AUTO, công tắc không trực tiếp ghi đè điều khiển tự độ
 1. HC-SR04 = 40 cm để gương ACTIVE.
 2. Kéo slider **255** → sáng tối đa.
 3. Kéo **80** → sáng yếu hơn.
-4. Kéo **0** → đèn tắt; PIR không NEXT dù gương có thể vẫn ACTIVE.
+4. Kéo **0** → đèn tắt; nút vẫn gửi NEXT khi gương ACTIVE.
 5. Kéo lại **180** để tiếp tục demo.
 
 Slider gửi số nguyên 0–255, Function trong flow chuyển thành chuỗi trước khi gửi MQTT. Source hiện không nhận `ON`/`OFF` cho lệnh độ sáng. Slider không tự đánh thức gương đang SLEEP.
@@ -360,7 +356,7 @@ Slider gửi số nguyên 0–255, Function trong flow chuyển thành chuỗi t
 ### 10.7. SLEEP khi rời đi
 
 1. HC-SR04 = **300 cm**.
-2. Ngừng kích hoạt PIR, đợi `PIR: Het chuyen dong`.
+2. Không nhấn nút chuyển trang.
 3. Chờ **120 giây kể từ hoạt động cuối**.
 4. Serial báo `Guong: SLEEP`, LED trắng tắt, Debug 6 nhận SLEEP.
 5. Đổi khoảng cách về 40 cm → gương ACTIVE lại.
@@ -377,8 +373,7 @@ Tiền tố mặc định: `smartmirror/demo01/`.
 | --- | --- | --- |
 | ESP32 → Node-RED | `sensor/temperature` | Ví dụ `28.0` |
 | ESP32 → Node-RED | `sensor/humidity` | Ví dụ `65.0` |
-| ESP32 → Node-RED | `sensor/motion` | `ON`, `OFF` |
-| ESP32 → Node-RED | `event/page` | `NEXT` |
+| ESP32 → Node-RED | `event/page` | JSON `{event, bootId, sequence}` (QoS 1, không retain) |
 | ESP32 → Node-RED | `state/fan` | `ON`, `OFF` |
 | ESP32 → Node-RED | `state/light` | PWM thực tế `0`–`255` |
 | ESP32 → Node-RED | `state/active` | `ACTIVE`, `SLEEP` |
@@ -432,11 +427,11 @@ Sửa C++: **lưu → Build → dừng/chạy lại Wokwi**. Sửa `diagram.json
 | DHT22 TIMEOUT/CHECKSUM | Kiểm tra GPIO15, nguồn/GND, firmware mới, giữ platform đã cố định và chu kỳ đọc 2 giây |
 | MQTT không kết nối | Kiểm tra Internet, broker/port, Wokwi license, Serial và trạng thái connected của node MQTT |
 | NEXT chỉ có trong Debug | Đúng với flow đi kèm; chưa có phần giao diện chuyển nội dung |
-| PIR không gửi NEXT | Kiểm tra ACTIVE, độ sáng > 0, MQTT kết nối; thử lại sau hơn 1 giây |
-| NEXT lặp mỗi giây | Đúng khi PIR giữ HIGH, kiểm tra delayTime của PIR |
+| Nút không gửi NEXT | Kiểm tra ACTIVE, MQTT và dây GPIO32–GND; thả rồi nhấn lại |
+| Giữ nút | Không lặp NEXT; thả rồi nhấn lại để gửi tiếp |
 | Công tắc quạt không tác dụng | Chọn MANUAL trước |
 | Slider không bật được đèn | Gương phải ACTIVE; slider không đánh thức gương |
-| Ra xa mà đèn chưa tắt | Chờ 120 giây, không kích hoạt PIR và không ở vùng 25–<60 cm |
+| Ra xa mà đèn chưa tắt | Chờ 120 giây, không nhấn nút và không ở vùng 25–<60 cm |
 | Thiết bị nhận lệnh lạ | Có thể trùng topic với người khác; đổi tiền tố ở cả code và flow |
 
 ## 14. Chân nối và demo thuyết trình
@@ -444,7 +439,7 @@ Sửa C++: **lưu → Build → dừng/chạy lại Wokwi**. Sửa `diagram.json
 | Thiết bị | Chân ESP32 |
 | --- | --- |
 | DHT22 SDA | GPIO15 |
-| PIR OUT | GPIO36, nhãn VP |
+| Nút nhấn | GPIO32 ↔ nút ↔ GND (INPUT_PULLUP) |
 | HC-SR04 TRIG / ECHO | GPIO13 / GPIO14 |
 | LED trắng | GPIO26 qua điện trở 330Ω |
 | LED xanh | GPIO27 qua điện trở 330Ω |
@@ -456,9 +451,21 @@ Thứ tự demo đề xuất:
 3. Thay nhiệt độ/độ ẩm, xem Serial và Debug.
 4. AUTO: tăng 33°C, giảm 31°C rồi 29°C để minh họa hai ngưỡng.
 5. MANUAL: bật/tắt quạt từ Dashboard; kéo slider đèn.
-6. PIR: Simulate Motion và quan sát NEXT trong Debug 4.
-7. Rời xa 300 cm, dừng PIR và chờ SLEEP.
+6. Nhấn nút và quan sát NEXT trong Debug 4; giữ nút không lặp.
+7. Rời xa 300 cm, không nhấn nút và chờ SLEEP.
 
 Hướng dẫn trên dành cho mô phỏng. Nếu làm mạch thật, ECHO 5V của HC-SR04 thông dụng cần hạ mức trước ESP32; quạt thật cần driver/relay phù hợp, không nối trực tiếp GPIO.
 
 Code đã build thành công trong môi trường Linux với cấu hình đi kèm. Chưa chạy bộ cài Windows trong phiên biên soạn; các bước Windows dựa trên tài liệu chính thức được liên kết bên trên. Trước thuyết trình, thử đủ các bước demo trên máy sử dụng.
+
+## Sự kiện chuyển trang QoS 1
+
+Firmware dùng MQTT (256dpi) 2.5.3 để publish sự kiện trang bằng QoS 1, retain=false.
+Payload: `{"event":"NEXT","bootId":"0123456789abcdef","sequence":1}`.
+Node MQTT-in event/page nhận QoS 1. Function `NEXT: validate and deduplicate`
+loại bản tin trùng theo bootId + sequence, sau đó trả payload `NEXT` cho Debug/phần hiển thị.
+Bộ nhớ chống trùng giữ tối đa 32 phiên khởi động trong context Node-RED;
+context mặc định bị mất khi khởi động lại Node-RED. Không lưu lệnh nhấn lúc MQTT offline.
+QoS 1 xác nhận giao tiếp với broker, không xác nhận màn hình đã đổi trang.
+Publish có thể chờ xác nhận tối đa khoảng 1 giây; nếu lỗi sẽ báo Serial, không tự lưu phát lại.
+Sau khi cập nhật, import lại flows.json và Deploy để Function chống trùng có hiệu lực.

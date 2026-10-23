@@ -1,6 +1,6 @@
 [
     {
-        "id": "a28620d3de22c8cd",
+        "id": "f680d3f76342e19a",
         "type": "tab",
         "label": "Flow 1",
         "disabled": false,
@@ -8,9 +8,9 @@
         "env": []
     },
     {
-        "id": "71783b44bc772667",
+        "id": "ad7e97a894add6b8",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/sensor/temperature",
         "qos": "0",
@@ -24,14 +24,14 @@
         "y": 220,
         "wires": [
             [
-                "9a17d921083e27be"
+                "9ade87c6cff72dac"
             ]
         ]
     },
     {
-        "id": "9a17d921083e27be",
+        "id": "9ade87c6cff72dac",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "debug 1",
         "active": true,
         "tosidebar": true,
@@ -46,9 +46,9 @@
         "wires": []
     },
     {
-        "id": "c588b7e029adf6cf",
+        "id": "04845644fcfa7b2e",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "debug 2",
         "active": true,
         "tosidebar": true,
@@ -63,10 +63,10 @@
         "wires": []
     },
     {
-        "id": "7323570797ba2b50",
+        "id": "22ce5028265d1c2f",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
-        "name": "debug 3",
+        "z": "f680d3f76342e19a",
+        "name": "debug 4",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -79,10 +79,10 @@
         "wires": []
     },
     {
-        "id": "1e540925d6ac7aa7",
+        "id": "269bf16cd974482f",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
-        "name": "debug 4",
+        "z": "f680d3f76342e19a",
+        "name": "debug 5",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -95,10 +95,10 @@
         "wires": []
     },
     {
-        "id": "6fefd45bb6b863ca",
+        "id": "e5803147857f50df",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
-        "name": "debug 5",
+        "z": "f680d3f76342e19a",
+        "name": "debug 6",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -111,10 +111,10 @@
         "wires": []
     },
     {
-        "id": "6be1b121a8fe701f",
+        "id": "a002a032246518ea",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
-        "name": "debug 6",
+        "z": "f680d3f76342e19a",
+        "name": "debug 7",
         "active": true,
         "tosidebar": true,
         "console": false,
@@ -127,25 +127,9 @@
         "wires": []
     },
     {
-        "id": "528db442ee6fa96c",
-        "type": "debug",
-        "z": "a28620d3de22c8cd",
-        "name": "debug 7",
-        "active": true,
-        "tosidebar": true,
-        "console": false,
-        "tostatus": false,
-        "complete": "false",
-        "statusVal": "",
-        "statusType": "auto",
-        "x": 700,
-        "y": 580,
-        "wires": []
-    },
-    {
-        "id": "20cacb77b760c292",
+        "id": "976bb2741d99bf7c",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/sensor/humidity",
         "qos": "0",
@@ -159,16 +143,16 @@
         "y": 280,
         "wires": [
             [
-                "c588b7e029adf6cf"
+                "04845644fcfa7b2e"
             ]
         ]
     },
     {
-        "id": "1aedc02692d38829",
+        "id": "522eede8e05cdc63",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
-        "topic": "smartmirror/demo01/sensor/motion",
+        "topic": "smartmirror/demo01/event/page",
         "qos": "1",
         "datatype": "auto-detect",
         "broker": "dc29b5681134edb7",
@@ -176,39 +160,18 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 400,
+        "x": 390,
         "y": 340,
         "wires": [
             [
-                "7323570797ba2b50"
+                "page-event-dedup"
             ]
         ]
     },
     {
-        "id": "4f6aff7e31e7df14",
+        "id": "5c8f4e6589b47581",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
-        "name": "",
-        "topic": "smartmirror/demo01/event/page",
-        "qos": "0",
-        "datatype": "auto-detect",
-        "broker": "dc29b5681134edb7",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 390,
-        "y": 400,
-        "wires": [
-            [
-                "1e540925d6ac7aa7"
-            ]
-        ]
-    },
-    {
-        "id": "986cfa063b97480c",
-        "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/state/fan",
         "qos": "1",
@@ -219,17 +182,17 @@
         "rh": 0,
         "inputs": 0,
         "x": 380,
-        "y": 460,
+        "y": 400,
         "wires": [
             [
-                "6fefd45bb6b863ca"
+                "269bf16cd974482f"
             ]
         ]
     },
     {
-        "id": "14f67601d4467b21",
+        "id": "ccaee23e940b1837",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/state/active",
         "qos": "1",
@@ -240,17 +203,17 @@
         "rh": 0,
         "inputs": 0,
         "x": 390,
-        "y": 520,
+        "y": 460,
         "wires": [
             [
-                "6be1b121a8fe701f"
+                "e5803147857f50df"
             ]
         ]
     },
     {
-        "id": "0b0b1d6ab88b1c01",
+        "id": "3aa5e8b793ccfd3f",
         "type": "mqtt in",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/status",
         "qos": "1",
@@ -261,17 +224,17 @@
         "rh": 0,
         "inputs": 0,
         "x": 370,
-        "y": 580,
+        "y": 520,
         "wires": [
             [
-                "528db442ee6fa96c"
+                "a002a032246518ea"
             ]
         ]
     },
     {
-        "id": "2f1ebcbe1dfdefee",
+        "id": "ae67927490b6aa96",
         "type": "ui-dropdown",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "group": "0b6550e29646b458",
         "name": "Chon che do quat",
         "label": "Select Option:Chế độ điều khiển quạt",
@@ -301,19 +264,19 @@
         "className": "",
         "typeIsComboBox": true,
         "msgTrigger": "onChange",
-        "x": 330,
-        "y": 660,
+        "x": 350,
+        "y": 580,
         "wires": [
             [
-                "3d936687f86c28c9",
-                "5b33d466aa9ff7ea"
+                "10b40d889be99762",
+                "19ab4be81be58f55"
             ]
         ]
     },
     {
-        "id": "3d936687f86c28c9",
+        "id": "10b40d889be99762",
         "type": "mqtt out",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "",
         "topic": "smartmirror/demo01/cmd/mode",
         "qos": "1",
@@ -324,14 +287,14 @@
         "correl": "",
         "expiry": "",
         "broker": "dc29b5681134edb7",
-        "x": 590,
-        "y": 660,
+        "x": 610,
+        "y": 580,
         "wires": []
     },
     {
-        "id": "5b33d466aa9ff7ea",
+        "id": "19ab4be81be58f55",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "debug 8",
         "active": true,
         "tosidebar": true,
@@ -340,14 +303,14 @@
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 580,
-        "y": 740,
+        "x": 600,
+        "y": 660,
         "wires": []
     },
     {
-        "id": "99a23d00ed6cd49b",
+        "id": "b79b88f7f350b70c",
         "type": "ui-switch",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "Cong tac quat",
         "label": "Bật / tắt quạt",
         "group": "0b6550e29646b458",
@@ -370,37 +333,19 @@
         "offvalueType": "str",
         "officon": "",
         "offcolor": "",
-        "x": 320,
-        "y": 800,
+        "x": 340,
+        "y": 720,
         "wires": [
             [
-                "78fa3faef2f46dc5",
-                "20dfea7a514d0370"
+                "aa77e6bd0abfd9ba",
+                "de154ce792883ea2"
             ]
         ]
     },
     {
-        "id": "78fa3faef2f46dc5",
-        "type": "mqtt out",
-        "z": "a28620d3de22c8cd",
-        "name": "",
-        "topic": "smartmirror/demo01/cmd/fan",
-        "qos": "1",
-        "retain": "",
-        "respTopic": "",
-        "contentType": "",
-        "userProps": "",
-        "correl": "",
-        "expiry": "",
-        "broker": "dc29b5681134edb7",
-        "x": 580,
-        "y": 800,
-        "wires": []
-    },
-    {
-        "id": "20dfea7a514d0370",
+        "id": "aa77e6bd0abfd9ba",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "debug 9",
         "active": true,
         "tosidebar": true,
@@ -410,14 +355,14 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 540,
-        "y": 860,
+        "x": 560,
+        "y": 780,
         "wires": []
     },
     {
-        "id": "e6db2b7279ee1589",
+        "id": "6d063a22f379273b",
         "type": "ui-slider",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "group": "0b6550e29646b458",
         "name": "Do sang den guong",
         "label": "Độ sáng đèn gương",
@@ -441,18 +386,18 @@
         "colorTrack": "",
         "colorThumb": "",
         "showTextField": false,
-        "x": 310,
-        "y": 920,
+        "x": 330,
+        "y": 840,
         "wires": [
             [
-                "6681bc89a645de4c"
+                "0b0643f02c50d643"
             ]
         ]
     },
     {
-        "id": "6681bc89a645de4c",
+        "id": "0b0643f02c50d643",
         "type": "function",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "Chuyen so thanh chuoi",
         "func": "msg.payload = String(Math.round(Number(msg.payload)));\nreturn msg;\n",
         "outputs": 1,
@@ -461,19 +406,19 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 580,
-        "y": 920,
+        "x": 600,
+        "y": 840,
         "wires": [
             [
-                "fd338985ee478b16",
-                "9b18eca7ebc8e755"
+                "6f5ebc938f7f5bee",
+                "84f4f819b0687eba"
             ]
         ]
     },
     {
-        "id": "fd338985ee478b16",
+        "id": "6f5ebc938f7f5bee",
         "type": "mqtt out",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": " Gui do sang",
         "topic": "smartmirror/demo01/cmd/light",
         "qos": "0",
@@ -484,14 +429,14 @@
         "correl": "",
         "expiry": "",
         "broker": "dc29b5681134edb7",
-        "x": 590,
-        "y": 980,
+        "x": 610,
+        "y": 900,
         "wires": []
     },
     {
-        "id": "9b18eca7ebc8e755",
+        "id": "84f4f819b0687eba",
         "type": "debug",
-        "z": "a28620d3de22c8cd",
+        "z": "f680d3f76342e19a",
         "name": "debug 10",
         "active": true,
         "tosidebar": true,
@@ -501,8 +446,26 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 760,
-        "y": 880,
+        "x": 780,
+        "y": 800,
+        "wires": []
+    },
+    {
+        "id": "de154ce792883ea2",
+        "type": "mqtt out",
+        "z": "f680d3f76342e19a",
+        "name": "",
+        "topic": "smartmirror/demo01/cmd/fan",
+        "qos": "1",
+        "retain": "",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "dc29b5681134edb7",
+        "x": 600,
+        "y": 720,
         "wires": []
     },
     {
@@ -628,11 +591,31 @@
         }
     },
     {
-        "id": "51c391ddf42bb3fd",
+        "id": "894ab83c0f59fd0f",
         "type": "global-config",
         "env": [],
         "modules": {
-            "@flowfuse/node-red-dashboard": "1.33.0"
+            "@flowfuse/node-red-dashboard": "1.34.0"
         }
+    },
+    {
+        "id": "page-event-dedup",
+        "type": "function",
+        "z": "f680d3f76342e19a",
+        "name": "NEXT: validate and deduplicate",
+        "func": "let event = msg.payload;\nif (Buffer.isBuffer(event)) event = event.toString();\nif (typeof event === 'string') {\n    try { event = JSON.parse(event); } catch (_) { return null; }\n}\nif (!event || event.event !== 'NEXT' ||\n    typeof event.bootId !== 'string' || !/^[a-f0-9]{16}$/.test(event.bootId) ||\n    !Number.isSafeInteger(event.sequence) || event.sequence < 1 ||\n    event.sequence > 4294967295 || msg.retain === true) return null;\nconst seen = context.get('pageSequences') || {};\nconst previous = seen[event.bootId];\nif (previous !== undefined && event.sequence <= previous) return null;\nseen[event.bootId] = event.sequence;\nconst keys = Object.keys(seen);\nif (keys.length > 32) delete seen[keys[0]];\ncontext.set('pageSequences', seen);\nmsg.pageEvent = event;\nmsg.payload = 'NEXT';\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 620,
+        "y": 340,
+        "wires": [
+            [
+                "22ce5028265d1c2f"
+            ]
+        ]
     }
 ]

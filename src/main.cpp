@@ -1,12 +1,13 @@
 #include <Arduino.h>
 #include <DHTesp.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
+#include <MQTT.h>
+#include <esp_system.h>
 #include <math.h>
 
 // Chan dung voi diagram.json hien tai
 constexpr int PIN_DHT = 15;
-constexpr int PIN_PIR = 36; // VP: chi nhan tin hieu
+constexpr int PIN_PAGE_BUTTON = 32; // Nut nhan noi GPIO32 voi GND
 constexpr int PIN_TRIG = 13;
 constexpr int PIN_ECHO = 14;
 constexpr int PIN_LED_MIRROR = 26;
@@ -22,8 +23,8 @@ constexpr float MIRROR_MIN_DISTANCE = 25.0f;
 constexpr float MIRROR_MAX_DISTANCE = 60.0f;
 // Chu ky phat xung kiem tra nguoi dung gan guong
 constexpr unsigned long DISTANCE_INTERVAL = 250UL;
-// Khoang cach thoi gian toi thieu giua hai su kien chuyen trang tu PIR
-constexpr unsigned long PAGE_COOLDOWN = 1000UL;
+// Chong doi nut nhan
+constexpr unsigned long BUTTON_DEBOUNCE = 40UL;
 // Tat guong
 constexpr unsigned long SLEEP_TIMEOUT = 120000UL;
 // Chay lai ket noi
@@ -38,7 +39,6 @@ constexpr int MQTT_PORT = 1883;
 // Duong dan topic
 const char *TOPIC_TEMP = "smartmirror/demo01/sensor/temperature";
 const char *TOPIC_HUM = "smartmirror/demo01/sensor/humidity";
-const char *TOPIC_MOTION = "smartmirror/demo01/sensor/motion";
 const char *TOPIC_PAGE = "smartmirror/demo01/event/page";
 const char *TOPIC_CMD_MODE = "smartmirror/demo01/cmd/mode";
 const char *TOPIC_CMD_FAN = "smartmirror/demo01/cmd/fan";
@@ -51,29 +51,33 @@ const char *TOPIC_STATUS = "smartmirror/demo01/status";
 
 DHTesp dht;
 WiFiClient wifiClient;
-PubSubClient mqtt(wifiClient);
+MQTTClient mqtt(256);
+String pendingMode, pendingFan, pendingLight;
+uint32_t pageSequence = 0;
+char bootId[17];
 
 float lastTemperature = NAN;
 bool autoMode = true;
 bool manualFan = false;
 bool fanOn = false;
 bool mirrorActive = false;
-bool previousMotion = false;
+bool rawButtonPressed = false;
+bool stableButtonPressed = false;
 int desiredBrightness = 180; // Tu 0 den 255
 int lastLedOutput = -1;
 
 unsigned long lastActivityTime = 0;
 unsigned long lastDhtRead = 0;
 unsigned long lastDistanceRead = 0;
-unsigned long lastPageTime = 0;
+unsigned long buttonChangedAt = 0;
 unsigned long lastWiFiAttempt = 0;
 unsigned long lastMqttAttempt = 0;
 
 // Chi gui MQTT khi dang ket noi Broker
-void sendMQTT(const char *topic, const char *value, bool retained = false)
+void sendMQTT(const char *topic, const char *value, bool retained = false, int qos = 0)
 {
   if (mqtt.connected())
-    mqtt.publish(topic, value, retained);
+    mqtt.publish(topic, value, retained, qos);
 }
 
 void sendNumber(const char *topic, int value, bool retained = false)
@@ -156,27 +160,43 @@ void readDHT()
   }
 }
 
-// PIR: khi con chuyen dong, cho phep NEXT moi PAGE_COOLDOWN.
-// PIR khong tu danh thuc guong; HC-SR04 quyet dinh nguong bat den.
-void readPageMotion()
+// Diem tich hop man hinh sau nay. Hien NEXT chi duoc xem o Node-RED Debug.
+void requestNextPage()
 {
-  const bool motion = digitalRead(PIN_PIR) == HIGH;
-  if (motion != previousMotion)
+  lastActivityTime = millis();
+  Serial.println("Button: NEXT PAGE");
+  if (!mqtt.connected())
   {
-    previousMotion = motion;
-    Serial.println(motion ? "PIR: Co chuyen dong" : "PIR: Het chuyen dong");
-    sendMQTT(TOPIC_MOTION, motion ? "ON" : "OFF");
+    Serial.println("NEXT khong gui: MQTT offline");
+    return;
+  }
+  char payload[160];
+  snprintf(payload, sizeof(payload),
+           "{\"event\":\"NEXT\",\"bootId\":\"%s\",\"sequence\":%lu}",
+           bootId, static_cast<unsigned long>(++pageSequence));
+  if (!mqtt.publish(TOPIC_PAGE, payload, false, 1))
+    Serial.println("NEXT chua duoc broker xac nhan; khong luu lenh cu");
+}
+
+void readPageButton()
+{
+  const unsigned long now = millis();
+  const bool pressed = digitalRead(PIN_PAGE_BUTTON) == LOW;
+  if (pressed != rawButtonPressed)
+  {
+    rawButtonPressed = pressed;
+    buttonChangedAt = now;
   }
 
-  const unsigned long now = millis();
-  if (motion && mirrorActive && lastLedOutput > 0 &&
-      now - lastPageTime >= PAGE_COOLDOWN)
-  {
-    lastPageTime = now;
-    lastActivityTime = now;
-    Serial.println("PIR: NEXT PAGE");
-    sendMQTT(TOPIC_PAGE, "NEXT");
-  }
+  if (now - buttonChangedAt < BUTTON_DEBOUNCE ||
+      stableButtonPressed == rawButtonPressed)
+    return;
+
+  stableButtonPressed = rawButtonPressed;
+  // Chi nhan canh nhan; giu nut khong lap. Nut khong danh thuc guong.
+  // Do sang den khong anh huong den viec chuyen trang.
+  if (stableButtonPressed && mirrorActive)
+    requestNextPage();
 }
 
 // HC-SR04: do khoang cach de bat/giu sang guong
@@ -212,15 +232,17 @@ void readPresenceDistance()
 }
 
 // Nhan lenh MQTT tu Node-RED
-void mqttCallback(char *topic, byte *payload, unsigned int length)
+// Callback chi luu lenh; khong publish long nhau khi dang cho PUBACK.
+void mqttCallback(String &topic, String &message)
 {
-  if (length > 32)
-    return;
-  String message;
-  for (unsigned int i = 0; i < length; i++)
-    message += (char)payload[i];
-  String receivedTopic(topic);
+  if (message.length() > 32) return;
+  if (topic == TOPIC_CMD_MODE) pendingMode = message;
+  else if (topic == TOPIC_CMD_FAN) pendingFan = message;
+  else if (topic == TOPIC_CMD_LIGHT) pendingLight = message;
+}
 
+void applyCommand(const String &receivedTopic, const String &message)
+{
   if (receivedTopic == TOPIC_CMD_MODE)
   {
     if (message == "AUTO")
@@ -288,12 +310,12 @@ void maintainConnections(unsigned long now)
     clientId += WiFi.macAddress();
     clientId.replace(":", "");
 
-    if (mqtt.connect(clientId.c_str(), TOPIC_STATUS, 0, true, "offline"))
+    if (mqtt.connect(clientId.c_str()))
     {
       Serial.println("MQTT da ket noi");
-      mqtt.subscribe(TOPIC_CMD_MODE);
-      mqtt.subscribe(TOPIC_CMD_FAN);
-      mqtt.subscribe(TOPIC_CMD_LIGHT);
+      mqtt.subscribe(TOPIC_CMD_MODE, 1);
+      mqtt.subscribe(TOPIC_CMD_FAN, 1);
+      mqtt.subscribe(TOPIC_CMD_LIGHT, 1);
       sendMQTT(TOPIC_STATUS, "online", true);
       sendMQTT(TOPIC_STATE_MODE, autoMode ? "AUTO" : "MANUAL", true);
       sendMQTT(TOPIC_STATE_FAN, fanOn ? "ON" : "OFF", true);
@@ -302,7 +324,7 @@ void maintainConnections(unsigned long now)
     }
     else
     {
-      Serial.printf("MQTT loi: %d\n", mqtt.state());
+      Serial.printf("MQTT loi: %d\n", mqtt.lastError());
     }
   }
 
@@ -315,7 +337,11 @@ void setup()
   Serial.begin(115200);
   pinMode(PIN_DHT, INPUT_PULLUP);
   dht.setup(PIN_DHT, DHTesp::DHT22);
-  pinMode(PIN_PIR, INPUT);
+  pinMode(PIN_PAGE_BUTTON, INPUT_PULLUP);
+  // Giu nut luc khoi dong: can tha ra roi nhan lai.
+  rawButtonPressed = digitalRead(PIN_PAGE_BUTTON) == LOW;
+  stableButtonPressed = rawButtonPressed;
+  buttonChangedAt = millis();
   pinMode(PIN_TRIG, OUTPUT);
   pinMode(PIN_ECHO, INPUT);
   pinMode(PIN_LED_MIRROR, OUTPUT);
@@ -324,9 +350,12 @@ void setup()
   digitalWrite(PIN_LED_FAN, LOW);
   updateMirrorLed();
 
-  mqtt.setServer(MQTT_SERVER, MQTT_PORT);
-  mqtt.setCallback(mqttCallback);
-  mqtt.setSocketTimeout(2);
+  snprintf(bootId, sizeof(bootId), "%08lx%08lx",
+           static_cast<unsigned long>(esp_random()), static_cast<unsigned long>(esp_random()));
+  mqtt.begin(MQTT_SERVER, MQTT_PORT, wifiClient);
+  mqtt.onMessage(mqttCallback);
+  mqtt.setOptions(15, true, 1000);
+  mqtt.setWill(TOPIC_STATUS, "offline", true, 1);
   WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
   lastWiFiAttempt = millis();
@@ -338,6 +367,12 @@ void loop()
 {
   unsigned long now = millis();
   maintainConnections(now);
+  // Lenh dieu khien la gia tri dich: khi nhan nhanh, ap dung gia tri moi nhat.
+  String mode = pendingMode, fan = pendingFan, light = pendingLight;
+  pendingMode = pendingFan = pendingLight = "";
+  if (mode.length()) applyCommand(TOPIC_CMD_MODE, mode);
+  if (fan.length()) applyCommand(TOPIC_CMD_FAN, fan);
+  if (light.length()) applyCommand(TOPIC_CMD_LIGHT, light);
 
   if (now - lastDhtRead >= DHT_INTERVAL)
   {
@@ -351,8 +386,8 @@ void loop()
     readPresenceDistance();
   }
 
-  // Doc PIR sau khoang cach de su kien dung trang thai den moi nhat.
-  readPageMotion();
+  // Doc nut sau khoang cach de dung trang thai ACTIVE moi nhat.
+  readPageButton();
 
   // Doc lai thoi gian sau khi cam bien cap nhat lastActivityTime.
   // Dung 'now' dau vong lap co the gay tran phep tru unsigned.
