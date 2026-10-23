@@ -1,17 +1,31 @@
 [
     {
+        "id": "sm-tab-mqtt",
+        "type": "tab",
+        "label": "01 · ESP32 và MQTT",
+        "disabled": false,
+        "info": "Nhận số đo và trạng thái, kiểm tra sự kiện nút nhấn, chuyển tới tab xử lý."
+    },
+    {
         "id": "f680d3f76342e19a",
         "type": "tab",
-        "label": "SmartMirror · Thiết bị & giao diện",
+        "label": "02 · Xử lý và API",
         "disabled": false,
         "info": "",
         "env": []
     },
     {
+        "id": "sm-tab-ui",
+        "type": "tab",
+        "label": "03 · Giao diện",
+        "disabled": false,
+        "info": "Hai màn hình Dashboard nhận chung trạng thái và gửi yêu cầu về tab xử lý."
+    },
+    {
         "id": "ad7e97a894add6b8",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "Nhiệt độ",
         "topic": "smartmirror/demo01/sensor/temperature",
         "qos": "0",
         "datatype": "auto-detect",
@@ -20,21 +34,21 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 420,
-        "y": 220,
+        "x": 210,
+        "y": 130,
         "wires": [
             [
                 "9ade87c6cff72dac",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
     {
         "id": "9ade87c6cff72dac",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 1",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem nhiệt độ",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -42,16 +56,16 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 220,
+        "x": 570,
+        "y": 130,
         "wires": []
     },
     {
         "id": "04845644fcfa7b2e",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 2",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem độ ẩm",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
@@ -59,79 +73,79 @@
         "targetType": "msg",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 280,
+        "x": 570,
+        "y": 210,
         "wires": []
     },
     {
         "id": "22ce5028265d1c2f",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 4",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem NEXT hợp lệ",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 340,
+        "x": 800,
+        "y": 240,
         "wires": []
     },
     {
         "id": "269bf16cd974482f",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 5",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem trạng thái quạt",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 400,
+        "x": 570,
+        "y": 370,
         "wires": []
     },
     {
         "id": "e5803147857f50df",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 6",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem active / sleep",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 460,
+        "x": 570,
+        "y": 450,
         "wires": []
     },
     {
         "id": "a002a032246518ea",
         "type": "debug",
-        "z": "f680d3f76342e19a",
-        "name": "debug 7",
-        "active": true,
+        "z": "sm-tab-mqtt",
+        "name": "Xem esp32 online / offline",
+        "active": false,
         "tosidebar": true,
         "console": false,
         "tostatus": false,
         "complete": "false",
         "statusVal": "",
         "statusType": "auto",
-        "x": 700,
-        "y": 520,
+        "x": 570,
+        "y": 530,
         "wires": []
     },
     {
         "id": "976bb2741d99bf7c",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "Độ ẩm",
         "topic": "smartmirror/demo01/sensor/humidity",
         "qos": "0",
         "datatype": "auto-detect",
@@ -140,20 +154,20 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 400,
-        "y": 280,
+        "x": 210,
+        "y": 210,
         "wires": [
             [
                 "04845644fcfa7b2e",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
     {
         "id": "522eede8e05cdc63",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "Nút chuyển trang",
         "topic": "smartmirror/demo01/event/page",
         "qos": "1",
         "datatype": "auto-detect",
@@ -162,8 +176,8 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 390,
-        "y": 340,
+        "x": 210,
+        "y": 290,
         "wires": [
             [
                 "page-event-dedup"
@@ -173,8 +187,8 @@
     {
         "id": "5c8f4e6589b47581",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "Trạng thái quạt",
         "topic": "smartmirror/demo01/state/fan",
         "qos": "1",
         "datatype": "auto-detect",
@@ -183,20 +197,20 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 380,
-        "y": 400,
+        "x": 210,
+        "y": 370,
         "wires": [
             [
                 "269bf16cd974482f",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
     {
         "id": "ccaee23e940b1837",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "ACTIVE / SLEEP",
         "topic": "smartmirror/demo01/state/active",
         "qos": "1",
         "datatype": "auto-detect",
@@ -205,20 +219,20 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 390,
-        "y": 460,
+        "x": 210,
+        "y": 450,
         "wires": [
             [
                 "e5803147857f50df",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
     {
         "id": "3aa5e8b793ccfd3f",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "",
+        "z": "sm-tab-mqtt",
+        "name": "ESP32 online / offline",
         "topic": "smartmirror/demo01/status",
         "qos": "1",
         "datatype": "auto-detect",
@@ -227,12 +241,12 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 370,
-        "y": 520,
+        "x": 210,
+        "y": 530,
         "wires": [
             [
                 "a002a032246518ea",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
@@ -349,8 +363,8 @@
     {
         "id": "page-event-dedup",
         "type": "function",
-        "z": "f680d3f76342e19a",
-        "name": "NEXT: validate and deduplicate",
+        "z": "sm-tab-mqtt",
+        "name": "NEXT · loại bản tin trùng",
         "func": "let event = msg.payload;\nif (Buffer.isBuffer(event)) event = event.toString();\nif (typeof event === 'string') {\n    try { event = JSON.parse(event); } catch (_) { return null; }\n}\nif (!event || event.event !== 'NEXT' ||\n    typeof event.bootId !== 'string' || !/^[a-f0-9]{16}$/.test(event.bootId) ||\n    !Number.isSafeInteger(event.sequence) || event.sequence < 1 ||\n    event.sequence > 4294967295 || msg.retain === true) return null;\nconst seen = context.get('pageSequences') || {};\nconst previous = seen[event.bootId];\nif (previous !== undefined && event.sequence <= previous) return null;\nseen[event.bootId] = event.sequence;\nconst keys = Object.keys(seen);\nif (keys.length > 32) delete seen[keys[0]];\ncontext.set('pageSequences', seen);\nmsg.pageEvent = event;\nmsg.payload = 'NEXT';\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
@@ -358,12 +372,12 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 620,
-        "y": 340,
+        "x": 520,
+        "y": 290,
         "wires": [
             [
                 "22ce5028265d1c2f",
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
@@ -430,7 +444,7 @@
     {
         "id": "sm-admin-ui",
         "type": "ui-template",
-        "z": "f680d3f76342e19a",
+        "z": "sm-tab-ui",
         "group": "sm-admin-group",
         "page": "",
         "ui": "",
@@ -445,18 +459,18 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1100,
-        "y": 240,
+        "x": 440,
+        "y": 140,
         "wires": [
             [
-                "sm-state"
+                "sm-ui-out"
             ]
         ]
     },
     {
         "id": "sm-mirror-ui",
         "type": "ui-template",
-        "z": "f680d3f76342e19a",
+        "z": "sm-tab-ui",
         "group": "sm-mirror-group",
         "page": "",
         "ui": "",
@@ -471,19 +485,19 @@
         "resendOnRefresh": true,
         "templateScope": "local",
         "className": "",
-        "x": 1100,
-        "y": 180,
+        "x": 440,
+        "y": 300,
         "wires": [
             [
-                "sm-state"
+                "sm-ui-out"
             ]
         ]
     },
     {
         "id": "sm-input-mode",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "Trạng thái mode",
+        "z": "sm-tab-mqtt",
+        "name": "Chế độ quạt",
         "topic": "smartmirror/demo01/state/mode",
         "qos": "1",
         "datatype": "auto-detect",
@@ -492,19 +506,19 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 220,
-        "y": 650,
+        "x": 210,
+        "y": 610,
         "wires": [
             [
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
     {
         "id": "sm-input-light",
         "type": "mqtt in",
-        "z": "f680d3f76342e19a",
-        "name": "Trạng thái light",
+        "z": "sm-tab-mqtt",
+        "name": "Độ sáng đèn",
         "topic": "smartmirror/demo01/state/light",
         "qos": "1",
         "datatype": "auto-detect",
@@ -513,11 +527,11 @@
         "rap": true,
         "rh": 0,
         "inputs": 0,
-        "x": 220,
-        "y": 710,
+        "x": 210,
+        "y": 690,
         "wires": [
             [
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
@@ -533,12 +547,11 @@
         "initialize": "flow.set('mirror', null);",
         "finalize": "",
         "libs": [],
-        "x": 750,
-        "y": 200,
+        "x": 490,
+        "y": 220,
         "wires": [
             [
-                "sm-admin-ui",
-                "sm-mirror-ui"
+                "sm-snapshot-out"
             ],
             [
                 "sm-command-out"
@@ -564,8 +577,8 @@
         "crontab": "",
         "once": true,
         "onceDelay": 1,
-        "x": 240,
-        "y": 780,
+        "x": 260,
+        "y": 360,
         "wires": [
             [
                 "sm-state"
@@ -581,14 +594,14 @@
         "qos": "1",
         "retain": "false",
         "broker": "dc29b5681134edb7",
-        "x": 1100,
-        "y": 330,
+        "x": 850,
+        "y": 220,
         "wires": []
     },
     {
         "id": "sm-broker-status",
         "type": "status",
-        "z": "f680d3f76342e19a",
+        "z": "sm-tab-mqtt",
         "name": "Kết nối broker",
         "scope": [
             "ad7e97a894add6b8",
@@ -601,7 +614,7 @@
             "sm-input-light"
         ],
         "x": 210,
-        "y": 850,
+        "y": 800,
         "wires": [
             [
                 "sm-broker-normalize"
@@ -611,7 +624,7 @@
     {
         "id": "sm-broker-normalize",
         "type": "function",
-        "z": "f680d3f76342e19a",
+        "z": "sm-tab-mqtt",
         "name": "Broker trực tuyến?",
         "func": "return {topic:'broker',payload:msg.status?.fill === 'green'};",
         "outputs": 1,
@@ -620,11 +633,11 @@
         "initialize": "",
         "finalize": "",
         "libs": [],
-        "x": 470,
-        "y": 850,
+        "x": 560,
+        "y": 800,
         "wires": [
             [
-                "sm-state"
+                "sm-data-out"
             ]
         ]
     },
@@ -645,8 +658,8 @@
         "senderr": false,
         "headers": [],
         "requestTimeout": "15000",
-        "x": 1100,
-        "y": 420,
+        "x": 850,
+        "y": 380,
         "wires": [
             [
                 "sm-state"
@@ -662,12 +675,133 @@
             "sm-http"
         ],
         "uncaught": false,
-        "x": 1070,
-        "y": 490,
+        "x": 520,
+        "y": 460,
         "wires": [
             [
                 "sm-state"
             ]
         ]
+    },
+    {
+        "id": "sm-data-out",
+        "type": "link out",
+        "z": "sm-tab-mqtt",
+        "name": "Sang xử lý",
+        "mode": "link",
+        "links": [
+            "sm-data-in"
+        ],
+        "x": 850,
+        "y": 350,
+        "wires": []
+    },
+    {
+        "id": "sm-data-in",
+        "type": "link in",
+        "z": "f680d3f76342e19a",
+        "name": "Dữ liệu ESP32",
+        "mode": "link",
+        "links": [
+            "sm-data-out"
+        ],
+        "x": 160,
+        "y": 180,
+        "wires": [
+            [
+                "sm-state"
+            ]
+        ]
+    },
+    {
+        "id": "sm-snapshot-out",
+        "type": "link out",
+        "z": "f680d3f76342e19a",
+        "name": "Sang giao diện",
+        "mode": "link",
+        "links": [
+            "sm-snapshot-in"
+        ],
+        "x": 840,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "sm-snapshot-in",
+        "type": "link in",
+        "z": "sm-tab-ui",
+        "name": "Trạng thái chung",
+        "mode": "link",
+        "links": [
+            "sm-snapshot-out"
+        ],
+        "x": 140,
+        "y": 180,
+        "wires": [
+            [
+                "sm-admin-ui",
+                "sm-mirror-ui"
+            ]
+        ]
+    },
+    {
+        "id": "sm-ui-out",
+        "type": "link out",
+        "z": "sm-tab-ui",
+        "name": "Yêu cầu người dùng",
+        "mode": "link",
+        "links": [
+            "sm-ui-in"
+        ],
+        "x": 780,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "sm-ui-in",
+        "type": "link in",
+        "z": "f680d3f76342e19a",
+        "name": "Từ giao diện",
+        "mode": "link",
+        "links": [
+            "sm-ui-out"
+        ],
+        "x": 160,
+        "y": 260,
+        "wires": [
+            [
+                "sm-state"
+            ]
+        ]
+    },
+    {
+        "id": "sm-heading-mqtt",
+        "type": "comment",
+        "z": "sm-tab-mqtt",
+        "name": "01  NHẬN DỮ LIỆU TỪ ESP32",
+        "info": "",
+        "x": 240,
+        "y": 50,
+        "wires": []
+    },
+    {
+        "id": "sm-heading-state",
+        "type": "comment",
+        "z": "f680d3f76342e19a",
+        "name": "02  QUẢN LÝ TRẠNG THÁI VÀ API",
+        "info": "",
+        "x": 340,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "sm-heading-ui",
+        "type": "comment",
+        "z": "sm-tab-ui",
+        "name": "03  HIỂN THỊ VÀ ĐIỀU KHIỂN",
+        "info": "",
+        "x": 320,
+        "y": 60,
+        "wires": []
     }
 ]

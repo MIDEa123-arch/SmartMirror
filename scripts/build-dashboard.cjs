@@ -4,7 +4,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const file = path.join(root, 'flows.json');
 let nodes = JSON.parse(fs.readFileSync(file,'utf8'));
-const tab = nodes.find(n=>n.type==='tab').id;
+const tab = nodes.find(n=>n.id==='sm-state')?.z || nodes.find(n=>n.type==='tab').id;
 const base = nodes.find(n=>n.type==='ui-base');
 const broker = nodes.find(n=>n.type==='mqtt-broker').id;
 const admin = nodes.find(n=>n.type==='ui-page' && n.id!=='sm-mirror-page');
@@ -39,6 +39,41 @@ add({id:'sm-broker-status',type:'status',z:tab,name:'Kết nối broker',scope:n
 fn('sm-broker-normalize','Broker trực tuyến?',"return {topic:'broker',payload:msg.status?.fill === 'green'};",[['sm-state']],470,850);
 add({id:'sm-http',type:'http request',z:tab,name:'Open-Meteo · HTTPS',method:'GET',ret:'obj',paytoqs:'ignore',url:'',tls:'',persist:false,proxy:'',insecureHTTPParser:false,authType:'',senderr:false,headers:[],requestTimeout:'15000',x:1100,y:420,wires:[['sm-state']]});
 add({id:'sm-http-catch',type:'catch',z:tab,name:'API lỗi → thông báo, giữ dữ liệu cũ',scope:['sm-http'],uncaught:false,x:1070,y:490,wires:[['sm-state']]});
+// Separate acquisition, processing and presentation. Link nodes keep long wires off-canvas.
+const mqttTab='sm-tab-mqtt', uiTab='sm-tab-ui';
+nodes.find(n=>n.id===tab).label='02 · Xử lý và API';
+add({id:mqttTab,type:'tab',label:'01 · ESP32 và MQTT',disabled:false,info:'Nhận số đo và trạng thái, kiểm tra sự kiện nút nhấn, chuyển tới tab xử lý.'});
+add({id:uiTab,type:'tab',label:'03 · Giao diện',disabled:false,info:'Hai màn hình Dashboard nhận chung trạng thái và gửi yêu cầu về tab xử lý.'});
+function link(id,type,z,name,x,y,links,wires=[]) { add({id,type,z,name,mode:'link',links,x,y,wires}); }
+link('sm-data-out','link out',mqttTab,'Sang xử lý',850,350,['sm-data-in']);
+link('sm-data-in','link in',tab,'Dữ liệu ESP32',160,180,['sm-data-out'],[['sm-state']]);
+link('sm-snapshot-out','link out',tab,'Sang giao diện',840,140,['sm-snapshot-in']);
+link('sm-snapshot-in','link in',uiTab,'Trạng thái chung',140,180,['sm-snapshot-out'],[['sm-admin-ui','sm-mirror-ui']]);
+link('sm-ui-out','link out',uiTab,'Yêu cầu người dùng',780,260,['sm-ui-in']);
+link('sm-ui-in','link in',tab,'Từ giao diện',160,260,['sm-ui-out'],[['sm-state']]);
+const inputNames={'sensor/temperature':'Nhiệt độ','sensor/humidity':'Độ ẩm','event/page':'Nút chuyển trang','state/fan':'Trạng thái quạt','state/active':'ACTIVE / SLEEP','status':'ESP32 online / offline','state/mode':'Chế độ quạt','state/light':'Độ sáng đèn'};
+let row=0;
+for(const n of nodes.filter(n=>n.type==='mqtt in')) {
+    n.z=mqttTab;n.x=210;n.y=130+row++*80;
+    n.name=inputNames[n.topic.replace('smartmirror/demo01/','')];
+    n.wires=n.wires.map(ws=>ws.map(id=>id==='sm-state'?'sm-data-out':id));
+    for(const id of n.wires.flat()) { const d=nodes.find(d=>d.id===id);if(d?.type==='debug'){d.z=mqttTab;d.x=570;d.y=n.y;d.name='Xem '+n.name.toLowerCase();d.active=false;} }
+}
+dedup.z=mqttTab;dedup.x=520;dedup.y=290;dedup.name='NEXT · loại bản tin trùng';
+dedup.wires=dedup.wires.map(ws=>ws.map(id=>id==='sm-state'?'sm-data-out':id));
+const pageDebug=nodes.find(n=>n.id==='22ce5028265d1c2f');pageDebug.z=mqttTab;pageDebug.x=800;pageDebug.y=240;pageDebug.name='Xem NEXT hợp lệ';pageDebug.active=false;
+const positions={ 'sm-state':[490,220], 'sm-tick':[260,360], 'sm-command-out':[850,220], 'sm-http':[850,380], 'sm-http-catch':[520,460], 'sm-admin-ui':[440,140], 'sm-mirror-ui':[440,300], 'sm-broker-status':[210,800], 'sm-broker-normalize':[560,800] };
+for(const [id,[x,y]] of Object.entries(positions)){const n=nodes.find(n=>n.id===id);n.x=x;n.y=y;}
+for(const id of ['sm-admin-ui','sm-mirror-ui']) {const n=nodes.find(n=>n.id===id);n.z=uiTab;n.wires=[['sm-ui-out']];}
+for(const id of ['sm-broker-status','sm-broker-normalize'])nodes.find(n=>n.id===id).z=mqttTab;
+nodes.find(n=>n.id==='sm-broker-normalize').wires=[['sm-data-out']];
+nodes.find(n=>n.id==='sm-state').wires[0]=['sm-snapshot-out'];
+function comment(id,z,name,x,y){add({id,type:'comment',z,name,info:'',x,y,wires:[]});}
+comment('sm-heading-mqtt',mqttTab,'01  NHẬN DỮ LIỆU TỪ ESP32',240,50);
+comment('sm-heading-state',tab,'02  QUẢN LÝ TRẠNG THÁI VÀ API',340,60);
+comment('sm-heading-ui',uiTab,'03  HIỂN THỊ VÀ ĐIỀU KHIỂN',320,60);
+nodes=[...nodes.filter(n=>n.type==='tab').sort((a,b)=>a.label.localeCompare(b.label)),...nodes.filter(n=>n.type!=='tab')];
+for(const n of nodes) if(n.wires) n.wires=n.wires.map(ws=>[...new Set(ws)]);
 fs.writeFileSync(file,JSON.stringify(nodes,null,4)+'\n');
 console.log('Built flows.json: '+nodes.length+' nodes');
 

@@ -31,13 +31,22 @@ const deploy=async nodes=>{const r=await fetch('http://127.0.0.1:1881/flows',{me
    assert.ok(commands.some(c=>c.topic.endsWith('/fan')&&c.payload==='ON'&&c.qos===1));
    const mirror=await browser.newPage();await mirror.goto('http://127.0.0.1:1881/dashboard/guong');await mirror.locator('.sm h1').waitFor();
    assert.equal(await mirror.locator('.sm h1').innerText(),'Tổng quan');
-   const event=JSON.stringify({event:'NEXT',bootId:'0011223344556677',sequence:1});
+   const bootId=require('node:crypto').randomBytes(8).toString('hex');
+   const event=JSON.stringify({event:'NEXT',bootId,sequence:1});
    await pub('event/page',event);await mirror.getByRole('heading',{name:'Thời tiết',exact:true}).waitFor();
    await pub('event/page',event);await mirror.waitForTimeout(500);assert.equal(await mirror.locator('.sm h1').innerText(),'Thời tiết');
-   await pub('event/page',JSON.stringify({event:'NEXT',bootId:'0011223344556677',sequence:2}));await mirror.getByRole('heading',{name:'Lịch & nhắc việc',exact:true,level:1}).waitFor();
+   await pub('event/page',JSON.stringify({event:'NEXT',bootId,sequence:2}));await mirror.getByRole('heading',{name:'Lịch & nhắc việc',exact:true,level:1}).waitFor();
    await page.getByPlaceholder('Đà Nẵng, Hà Nội…').fill('Da Nang');await page.getByRole('button',{name:'Tìm địa điểm',exact:true}).click();
    await page.locator('.sm-places button').first().waitFor({timeout:20000});await page.locator('.sm-places button').first().click();
    await page.locator('.sm-weather').waitFor({timeout:25000});
+   if (process.env.REPORT_CAPTURE) {
+     await page.getByRole('button',{name:'Trang tiếp theo trên gương →',exact:true}).click();
+     await mirror.getByRole('heading',{name:'Tổng quan',exact:true}).waitFor();
+     await page.getByRole('button',{name:'Trang tiếp theo trên gương →',exact:true}).click();
+     await mirror.getByRole('heading',{name:'Thời tiết',exact:true}).waitFor();
+     await mirror.screenshot({path:'.runtime/mirror-weather.png',fullPage:true});
+     await page.getByRole('button',{name:'Trang tiếp theo trên gương →',exact:true}).click();
+   }
    await page.getByPlaceholder('Ví dụ: Họp nhóm đồ án').fill('QA reminder');
    const at=new Date(Date.now()+10*60000+7*3600000).toISOString().slice(0,16);
    await page.locator('input[type=datetime-local]').fill(at);await page.getByRole('button',{name:'Thêm nhắc việc',exact:true}).click();
