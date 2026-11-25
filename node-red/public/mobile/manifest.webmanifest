@@ -1,0 +1,14 @@
+{
+  "name": "Lịch gương thông minh",
+  "short_name": "Lịch gương",
+  "description": "Lịch hoạt động đồng bộ với gương thông minh",
+  "start_url": "/dashboard/guong-thong-minh",
+  "scope": "/dashboard/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#10191e",
+  "theme_color": "#10201f",
+  "icons": [
+    { "src": "/mobile/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

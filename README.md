@@ -1,11 +1,10 @@
 # SmartMirror — ESP32 + Node-RED
 
-Bản này hoàn thiện tới Node-RED Dashboard 2, dùng trên trình duyệt máy tính/điện thoại.
-Không cần viết web hoặc app riêng. Thư mục `src/` vẫn là firmware ESP32.
+Bản này gồm firmware ESP32, mô phỏng Wokwi, ứng dụng Android viết bằng Flutter và backend Node-RED. Khi triển khai theo USB, điện thoại chạy app, laptop nhận lịch và chuyển dữ liệu tới ESP32 qua cổng COM. Wokwi vẫn dùng MQTT để mô phỏng.
 
 ## Chạy ngay trên Windows
 
-Cần Node.js, Node-RED, PlatformIO và Wokwi như bản trước. Nếu chưa có Node-RED:
+Cần Node.js, Node-RED, Flutter SDK, Android SDK và PlatformIO. Nếu chưa có Node-RED:
 
 ```powershell
 npm.cmd install -g node-red
@@ -15,24 +14,47 @@ Tại thư mục dự án:
 
 ```powershell
 Set-Location D:\IOT\SmartMirror
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -ReloadFlow
 ```
 
-Script dùng thư mục dữ liệu riêng `.runtime/`, cổng **1881**, lưu lịch/vị trí bằng file context.
-Tận dụng Dashboard 2 đã cài ở `.node-red`, hoặc tự cài nếu chưa có.
-Không thay settings hay flow đang chạy ở cổng 1880. Chỉ chạy một phiên script tại một thời điểm.
-Runtime dùng bản sao `.runtime/flows.json`; chỉnh trong Editor sẽ lưu vào bản sao này,
-không tự ghi đè source ở thư mục gốc. Muốn lưu sửa đổi Editor vào Git, export lại flow.
+Script dùng Node-RED ở `127.0.0.1:1881`, HTTPS, mã kết nối và thư mục lưu riêng `.runtime/`.
+Không bật truy cập LAN. `-ReloadFlow` nạp cấu hình từ project vào runtime.
+Lần chạy đầu tự tạo khóa HTTPS riêng trong `.runtime/` và cập nhật chứng chỉ công khai vào app; sau đó `flutter run` sẽ build app với chứng chỉ đúng cho máy đó. Khóa riêng và mã ghép nối không được đẩy lên Git.
 
-Mở:
+### App Android qua cáp USB
 
-- Gương: <http://localhost:1881/dashboard/guong>
-- Điều khiển: <http://localhost:1881/dashboard/guong-thong-minh>
-- Node-RED Editor: <http://localhost:1881>
+1. Bật Tùy chọn nhà phát triển và Gỡ lỗi USB trên điện thoại; cắm điện thoại vào laptop và chấp nhận hộp thoại tin cậy.
+2. Chạy script trên. Script tự cấu hình ADB reverse cho emulator/điện thoại đang được ADB cấp quyền.
+3. Mở app, vào Cài đặt kết nối, nhập mã kết nối đang hiện trong cửa sổ PowerShell.
+4. Lịch đi qua HTTPS cục bộ tới laptop. Không cần Wi-Fi chung hay Internet cho luồng điều khiển.
 
-Tiếp tục chạy firmware trong Wokwi. Khi không có ESP32, ô số đo hiện `--` và điều khiển khóa.
-Trong Wokwi đặt HC-SR04 **40 cm** để gương ACTIVE; nút GPIO32 chuyển 3 trang.
-Đưa HC-SR04 ra 300 cm, không nhấn nút trong 120 giây để SLEEP.
+### ESP32 qua USB/COM
+
+Kết nối ESP32 với laptop bằng cáp USB dữ liệu, xem tên cổng trong Device Manager rồi chạy ví dụ:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -SerialPort COM5 -ReloadFlow
+```
+
+Thay `COM5` bằng cổng thật. Cùng một cổng COM chỉ được một chương trình mở; dừng Node-RED trước khi upload firmware.
+Giao thức nối COM dùng 115200 baud, 8-N-1, dữ liệu UTF-8 kết thúc bằng newline.
+App → HTTPS/USB reverse → laptop → serial COM → ESP32. Trạng thái ESP32 chạy ngược về laptop và app.
+
+### Emulator và APK
+
+Giữ Node-RED chạy, mở terminal khác:
+
+```powershell
+Set-Location D:\IOT\SmartMirror\mobile_app
+flutter devices
+flutter run -d emulator-5554
+```
+
+APK debug: `mobile_app\build\app\outputs\flutter-apk\app-debug.apk` (tạo bằng `flutter build apk --debug`).
+Không thể xác nhận kết nối phần cứng thật cho tới khi có điện thoại và ESP32 thật để thử.
+
+Tiếp tục chạy firmware trong Wokwi. Đặt HC-SR04 ở **150 cm**, sau đó chọn **Simulate Motion** trên PIR để đánh thức gương. Vuốt ngang trực tiếp trên TFT để đổi trang. Bấm LDR để thay đổi độ rọi; LED xanh mô phỏng đèn gương chỉ sáng khi gương hoạt động và môi trường tối, LED trắng mô phỏng PWM đèn nền TFT. Các nút tháng và lịch hẹn nằm trong ứng dụng lịch.
+Khi người rời khỏi vùng 2 m, gương ngủ sau 30 giây; khi mất số đo khoảng cách, gương tắt sau 10 giây. Đặt HC-SR04 ở **250 cm** rồi thử chuyển động để kiểm tra gương không bật ngoài vùng.
 Ctrl+C tại Terminal để dừng Node-RED.
 
 ## Lấy vị trí thật và thời tiết — không cần API key
@@ -42,7 +64,7 @@ Gói API công cộng này phù hợp dự án cá nhân, phi thương mại the
 
 ### Cách 1: Tìm địa điểm
 
-1. Mở trang **Điều khiển**, kéo xuống **Vị trí thời tiết**.
+1. Mở giao diện web Node-RED ở máy tính, kéo xuống **Vị trí thời tiết**.
 2. Nhập `Đà Nẵng`, `Hà Nội`, hoặc tên nơi bạn cần; nhấn **Tìm địa điểm**.
 3. API trả danh sách kết quả thật; chọn đúng thành phố/tỉnh/quốc gia.
 4. Node-RED lưu tọa độ và tự lấy thời tiết hiện tại cùng dự báo 3 ngày.
@@ -50,7 +72,7 @@ Gói API công cộng này phù hợp dự án cá nhân, phi thương mại the
 
 ### Cách 2: Định vị thiết bị
 
-1. Mở Dashboard bằng `http://localhost:1881` trên máy tính chạy Node-RED.
+1. Mở Dashboard bằng `https://localhost:1881` trên máy tính chạy Node-RED.
 2. Nhấn **Dùng vị trí của tôi**.
 3. Khi trình duyệt hỏi, chọn **Cho phép / Allow**. Có thể phải bật Location của Windows.
 4. Trình duyệt trả tọa độ (không nhất thiết từ GPS); độ chính xác phụ thuộc thiết bị.
@@ -69,37 +91,32 @@ Tài liệu: [Geocoding API](https://open-meteo.com/en/docs/geocoding-api),
 
 ## Giao diện và logic
 
-- **Tổng quan:** giờ/ngày Việt Nam, nhiệt độ/độ ẩm trong phòng, trạng thái quạt và đèn.
+- **Tổng quan:** giờ/ngày Việt Nam, nhiệt độ/độ ẩm trong phòng, trạng thái đèn gương và độ sáng tự động.
 - **Thời tiết:** số liệu ngoài trời theo vị trí chọn, dự báo 3 ngày và thời điểm cập nhật.
-- **Lịch & nhắc việc:** thêm việc ở Điều khiển; nhắc từ 15 phút trước đến 1 phút sau giờ hẹn.
-- Nút nhấn lần lượt chuyển Tổng quan → Thời tiết → Lịch → Tổng quan; giữ không lặp.
+- **Lịch hoạt động:** xem lịch tháng, chọn ngày, thêm/sửa/xóa hoạt động và đánh dấu hoàn thành.
+- Vuốt ngang trái/phải trên TFT để chuyển Tổng quan → Thời tiết → Lịch hôm nay. Mỗi lần vuốt chỉ đổi một trang.
 - Khi SLEEP, gương nền đen. Khi ACTIVE trở lại, quay về Tổng quan.
 - Các trình duyệt cùng xem trạng thái và trang gương do Node-RED quản lý chung.
 - Lịch nhập theo giờ Việt Nam UTC+7, kể cả khi múi giờ điện thoại khác.
-- Lịch nhập trực tiếp; chưa kết nối Google Calendar. Nhắc trên giao diện, không gửi push khi trình duyệt đóng.
+- Khi cảm biến đánh thức gương, lịch của ngày hiện tại được gửi lên TFT và hiển thị trên trang gương.
 - Nhiệt độ/độ ẩm không có mẫu mới 15 giây sẽ hiện `--`; các lệnh bị khóa khi thiết bị chưa có dữ liệu mới.
 - Thời tiết cũ quá 30 phút được gắn nhãn; lỗi API giữ bản cũ kèm thông báo.
-- Điều khiển gửi QoS 1, không retain. UI đợi trạng thái ESP32 xác nhận tối đa 8 giây.
-- Quạt AUTO bật ≥32°C, tắt ≤30°C; MANUAL mới dùng nút bật/tắt quạt.
-- Đèn vẫn chỉnh thủ công 0–255 khi ACTIVE. Chưa có cảm biến ánh sáng để AUTO.
+- Đèn gương chỉ sáng khi gương ACTIVE và phòng tối; đèn gương riêng và đèn nền TFT tự chỉnh bằng cùng cảm biến LDR. Màn hình sáng hơn khi phòng sáng và giảm sáng trong phòng tối.
+- HC-SR04 cần ba mẫu liên tiếp trong vùng **2 cm đến 2 m**, ghép với cạnh lên PIR trong cửa sổ 3 giây. Mỗi cạnh PIR chỉ dùng một lần.
+- Đặt hai mắt siêu âm lộ ra phía trước và hướng về vùng đứng soi. Đồ vật gần có thể thỏa khoảng cách nhưng không tự đánh thức gương nếu PIR không phát hiện chuyển động.
+- MQTT công cộng chỉ phục vụ mô phỏng; bản thật cần broker riêng có xác thực.
 - Lịch sử: một mẫu hợp lệ/phút, tối đa 24 giờ trong phiên chạy; xuất CSV có nhiệt độ và độ ẩm.
 - Lưu lịch/vị trí qua khởi động lại; lịch sử và trạng thái online không được khôi phục như dữ liệu mới.
   File context có thể cần tới 30 giây để flush; dừng bằng Ctrl+C để đóng sạch.
 
-## Xem trên điện thoại cùng Wi-Fi
+## Kết nối trực tiếp giữa app và gương
 
-Dừng phiên đang chạy rồi bật chế độ LAN:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -Lan
-ipconfig
-```
-
-Tìm IPv4 của Wi-Fi máy tính, ví dụ `192.168.1.10`. Trên điện thoại mở:
-`http://192.168.1.10:1881/dashboard/guong-thong-minh`.
-Nếu Windows Firewall hỏi, cho phép Node.js trên mạng Private. Máy và điện thoại phải cùng mạng.
-Chế độ này cũng cho mạng LAN truy cập Editor; dùng mạng tin cậy, chưa mở cổng ra Internet.
-Không cần HTTPS nếu chỉ tìm địa điểm và điều khiển qua LAN; định vị trên điện thoại cần HTTPS.
+App không nói chuyện trực tiếp với ESP32. Điện thoại kết nối laptop bằng USB đã được ủy quyền;
+ADB reverse chuyển kết nối app tới dịch vụ HTTPS chỉ lắng nghe trên localhost. Node-RED chuyển
+lịch và nội dung màn hình qua USB/COM tới ESP32, rồi nhận trạng thái cảm biến và đèn ngược về app.
+Mã kết nối được tạo cục bộ, app lưu mã trong Android Keystore, và chứng chỉ TLS riêng của dự án
+được ghim trong app. Không mở dịch vụ ra mạng LAN/Internet. Đây là cấu hình thử nghiệm/đồ án;
+USB debugging phải bật và chỉ nên ủy quyền laptop tin cậy.
 
 ## Nếu muốn import vào Node-RED cũ ở cổng 1880
 
@@ -119,24 +136,90 @@ contextStorage: {
 
 Script chạy riêng đã có cấu hình này sẵn. Không chạy song song hai Node-RED dùng chung `flows.json`.
 
+## Danh sách thiết bị cần mua để lắp thật
+
+Danh sách này theo đúng sơ đồ hiện tại: ESP32 DevKit V1/WROOM, TFT SPI ILI9488 3,5 inch + XPT2046, HC-SR04 + PIR để xác nhận người trong phạm vi khoảng 2 m, LDR để tự chỉnh đèn và màn hình, DHT22, và đèn LED gương điều khiển PWM. Các phiên bản màn hình khác giao tiếp (RGB/parallel) hoặc cảm ứng điện dung không khớp wiring/firmware hiện tại.
+
+| SL | Thiết bị | Yêu cầu khi mua |
+| ---: | --- | --- |
+| 1 | ESP32 DevKit V1 dùng module ESP32-WROOM-32 | Có USB-to-UART tích hợp; đầu USB Micro-USB hoặc USB-C tùy bo. Tránh loại có PSRAM nếu vẫn dùng pin GPIO16/17 như sơ đồ. |
+| 1 | TFT màu 3,5 inch ILI9488, SPI, 480×320, kèm XPT2046 | Cần đúng giao tiếp SPI và touch điện trở XPT2046; mức logic 3,3 V; có chân điều khiển đèn nền LED/BL riêng để chỉnh PWM. Hỏi người bán sơ đồ chân và VCC nhận 3,3 V hay 5 V trước khi cấp nguồn. |
+| 1 | Cảm biến khoảng cách HC-SR04 | Cấp 5 V; chân ECHO phải qua mạch chia áp trước GPIO ESP32. |
+| 1 | Cảm biến chuyển động PIR HC-SR501 | OUT tương thích mức logic 3,3 V, VCC 5 V. Chỉnh jumper L và TIME theo hướng dẫn lắp đặt. |
+| 1 | Cảm biến nhiệt độ/độ ẩm DHT22 hoặc AM2302 | Loại module 3 chân hoặc cảm biến rời 4 chân; nếu cảm biến rời cần điện trở kéo lên DATA 10 kΩ. |
+| 1 | Module quang trở LDR có ngõ AO và DO | Cấp 3,3 V để AO không vượt mức ESP32; sơ đồ còn dùng điện trở kéo xuống 100 kΩ ở GPIO34. |
+| Theo kích thước gương | Dải LED soi gương | Chọn điện áp và công suất theo chiều dài; firmware chỉ phát PWM mức logic, không cấp tải LED trực tiếp từ GPIO. |
+| 1 | Mạch MOSFET N-channel logic-level hoặc module MOSFET PWM | Nhận mức điều khiển 3,3 V từ ESP32 và chịu được dòng của dải LED; không dùng relay nếu muốn chỉnh sáng. |
+| 1 | Nguồn riêng cho dải LED | Cùng điện áp với dải LED; chọn dòng tối thiểu theo tổng công suất, nên chừa khoảng 20–30%. GND nguồn LED nối chung với GND ESP32. |
+| 1 bộ | Điện trở và dây nối | 1 kΩ + 1,5 kΩ chia áp ECHO; 10 kΩ kéo lên DHT22 rời; 100 kΩ kéo xuống GPIO34; 100–220 Ω nối cổng MOSFET và 10 kΩ kéo cổng xuống GND nếu dùng MOSFET rời. Mua bộ điện trở 1/4 W là tiện nhất. |
+| 1 bộ | Dây USB dữ liệu và dây jumper | Một cáp USB dữ liệu điện thoại–laptop; một cáp USB dữ liệu ESP32–laptop, đúng đầu cắm của bo. Dây Dupont theo đầu đực/cái của module. |
+| 1 | Breadboard để ráp thử | Nên dùng khi dựng và kiểm tra nguyên mẫu. Khi lắp cố định, chuyển sang PCB/perfboard hoặc đầu nối bắt vít và hộp cách điện; không để mạch treo bằng dây jumper. |
+
+**Có thể cần thêm:** bộ hạ áp ổn định 5 V xuống 3,3 V dòng phù hợp nếu module TFT yêu cầu nguồn 3,3 V riêng hoặc tổng tải vượt khả năng chân 3V3 trên DevKit. Không đoán chân VCC/LED của TFT theo tên ILI9488 vì cách làm mạch nguồn khác nhau giữa các phiên bản. Không cấp 5 V vào GPIO ESP32; không nối hai nguồn 5 V riêng vào cùng bo khi cáp USB dữ liệu còn cấp nguồn nếu chưa có cách chống cấp ngược.
+
+Để chạy app đúng mô hình đã chọn, điện thoại và ESP32 cần **hai cáp dữ liệu riêng** tới laptop. Điện thoại phải được cho phép Gỡ lỗi USB; ESP32 dùng cổng COM. Cảm biến/driver có thể dùng chung đường nguồn và GND phù hợp, nhưng không gộp nhiều tín hiệu vào một GPIO: chỉ SCK/MOSI SPI được dùng chung, mỗi thiết bị có chân CS riêng.
+
 ## Mạch và firmware
+
+### Màn hình, cảm ứng và tự động chiếu sáng
+
+Wokwi dùng màn ILI9341 320 × 240 có FT6206 cảm ứng điện dung trên I²C. Màn thật dự kiến là ILI9488 3,5 inch 480 × 320 có XPT2046 cảm ứng điện trở trên SPI. Firmware chọn đúng bộ điều khiển theo build profile; cả hai thao tác vuốt ngang để đổi ba trang Tổng quan, Thời tiết và Lịch hôm nay. Wokwi mô phỏng màn hình 2,8 inch và FT6206, không phải kích thước hay loại cảm ứng của module thật.
+
+Khi PIR báo chuyển động và HC-SR04 xác nhận người ở trong 2 m, gương bật. Đèn gương chỉ sáng khi có người và LDR nhận thấy phòng tối; nó tự tăng sáng khi tối hơn. Cùng cảm biến đó điều chỉnh đèn nền TFT: phòng sáng thì màn hình sáng hơn, phòng tối thì màn hình giảm sáng để dễ nhìn. Gương ngủ thì cả đèn gương và màn hình đều tắt. Nếu LDR hỏng hoặc bị rút, firmware dùng mức dự phòng thay vì giữ PWM cũ. Khi người rời khỏi vùng đo, gương tắt sau 30 giây; nếu HC-SR04 mất dữ liệu, gương tắt theo ngưỡng stale 10 giây.
+
+Lịch hoạt động được nhập trong ứng dụng lịch ưu tiên điện thoại, có lịch tháng, chọn ngày, thêm/sửa/xóa hoạt động và đánh dấu hoàn thành. Node-RED chạy nền để lưu lịch; Wokwi đồng bộ qua MQTT, còn bản nối thật chuyển lịch qua USB/COM. Giao diện Node-RED không còn dùng để bật/tắt đèn hoặc chỉnh độ sáng. Khi gương bật, lịch của ngày hiện tại hiện trên màn hình và trên trang gương. Tệp lịch lưu trong context `localfilesystem` của Node-RED.
+
+### Chân kết nối
 
 | Thiết bị | GPIO / kết nối |
 | --- | --- |
 | DHT22 | GPIO15, kéo lên 3V3 bằng 10kΩ |
-| HC-SR04 | TRIG 13, ECHO 14 |
-| Nút nhấn | GPIO32 ↔ nút ↔ GND, INPUT_PULLUP |
-| LED đèn gương | GPIO26 qua 330Ω |
-| LED mô phỏng quạt | GPIO27 qua 330Ω |
+| HC-SR04 | VCC → 5V, GND → GND, TRIG → GPIO13, ECHO → GPIO21 qua mạch chia áp |
+| PIR HC-SR501 | VCC → 5V, GND → GND, OUT (mức 3,3 V) → GPIO14 |
+| Cảm ứng Wokwi FT6206 | SDA → GPIO32, SCL → GPIO26; I²C riêng cho bộ điều khiển chạm |
+| Cảm ứng thật XPT2046 | T_CLK → GPIO18, T_DIN → GPIO23, T_CS → GPIO16, T_DO → GPIO17; T_IRQ có thể để hở |
+| Module LDR | Cấp 3V3, GND chung, AO → GPIO34, DO → GPIO33; thêm 100 kΩ kéo GPIO34 xuống GND |
+| Đèn gương | GPIO27 PWM → cổng driver MOSFET logic-level; LED mô phỏng nối GPIO27 qua 330 Ω |
+| TFT SPI | SCK → GPIO18, MOSI → GPIO23, CS → GPIO22, D/C → GPIO25, chung GND |
+| TFT thật ILI9488 | RST → GPIO4; SDO/MISO của LCD để hở; nguồn VCC theo đúng phiên bản module |
+| TFT Wokwi FT6206 | SDA → GPIO32, SCL → GPIO26; chân LED nối 3V3 vì mô phỏng không đổi độ sáng ảnh |
+| Đèn nền TFT thật | GPIO19 PWM → đầu vào dimming/EN của driver đèn nền tương thích với module |
 
-Giữ nguyên firmware QoS 1 đã build trước đó. Build khi cần:
+GPIO19 và GPIO27 chỉ xuất tín hiệu PWM mức logic. Không cấp dòng cho LED nền hoặc dải LED từ chân ESP32. Đèn gương dùng MOSFET N-channel logic-level, điện trở cổng khoảng 100–220 Ω, điện trở kéo cổng xuống khoảng 10 kΩ, nguồn riêng đúng điện áp của dải LED và GND chung. Không dùng module relay nếu cần điều chỉnh độ sáng PWM. Với đèn nền TFT, xác nhận chân LED của đúng module nhận PWM; nếu không, dùng driver MOSFET riêng. Wokwi không làm tối ảnh TFT theo PWM GPIO19 nên LED trắng qua 330 Ω chỉ là proxy.
+
+Sơ đồ Wokwi dùng breadboard nửa cỡ. Thanh 3V3 cấp cho DHT22, module LDR và màn FT6206; thanh 5 V cấp HC-SR04 và PIR. Dây đen nối GND về chung. Giữ hai thanh dương tách riêng. Đèn gương giả lập bằng LED và điện trở; ngoài đời cần driver công suất và nguồn riêng.
+
+Trong sơ đồ phần cứng, cột 17 trên nửa trên nối DHT22 SDA, GPIO15 và điện trở kéo lên 10 kΩ. Cột 3 ở nửa dưới nối AO của LDR, GPIO34 và điện trở kéo xuống 100 kΩ. Mỗi cột 5 lỗ chỉ thông trong cùng một nửa breadboard. Dải LED thật không cắm vào GPIO27; nối qua MOSFET và nguồn ngoài.
+
+[Sơ đồ chạy Wokwi](diagram.json) nối ECHO trực tiếp GPIO21 chỉ trong mô phỏng. Khi lắp thật, xem [sơ đồ đi dây có mạch chia áp](diagram.hardware.json): ECHO qua 1 kΩ tới GPIO21, từ GPIO21 qua 1,5 kΩ xuống GND. Module màn thật có các chân touch riêng: T_CLK/T_DIN dùng chung SCK/MOSI với TFT, nhưng T_CS và T_DO là chân riêng. TFT SDO không nối GPIO17; GPIO17 chỉ nhận T_DO của XPT2046.
+
+Hai thiết bị SPI có thể dùng chung SCK=18 và MOSI=23 vì mỗi thiết bị có CS riêng: TFT CS=22, touch CS=16. XPT2046 trả dữ liệu trên GPIO17; T_IRQ không cần nối do firmware polling. GPIO16/17 phù hợp với ESP32 DevKit dùng module WROOM; nếu đổi sang bo có PSRAM, kiểm tra pinout lại. GPIO19 dành cho đèn nền PWM và GPIO27 cho đèn gương PWM.
+
+Nối 100 kΩ từ GPIO34 xuống GND để ESP32 nhận biết module LDR bị rút. GPIO33 có pull-up nội. Module phải được cấp 3V3 để AO không vượt ngưỡng ADC ESP32. Chỉnh DO ở mức HIGH khi tối, LOW khi sáng; đặt LDR tránh chiếu trực tiếp từ đèn gương để hạn chế phản hồi.
+
+Mạch chia áp đưa xung ECHO từ khoảng 5 V về khoảng 3,0 V để GPIO21 đọc được. Dùng chung GND cho cảm biến và ESP32.
+
+```text
+HC-SR04 ECHO ── 1 kΩ ──┬── GPIO21
+                       │
+                     1,5 kΩ
+                       │
+                      GND
+```
+
+Build firmware khi cần:
 
 ```powershell
 & "$env:USERPROFILE\.platformio\penv\Scripts\platformio.exe" run
 ```
 
-Mạch hiện là Wokwi. Khi làm thật cần xử lý mức điện áp ECHO của HC-SR04 phù hợp ESP32
-và mạch công suất riêng cho quạt/đèn. MQTT hiện vẫn dùng broker public phục vụ demo.
+Lệnh mặc định build bản Wokwi với ILI9341/FT6206. Đặt khoảng cách dưới 2 m và mô phỏng chuyển động để bật gương; thử vuốt ngang trên TFT để đổi ba trang. Thay lux của LDR để quan sát LED đèn gương và LED proxy PWM màn hình. Ở trên 2 m, thử chuyển động để kiểm tra gương không bật.
+
+Có thể chạy bằng trình duyệt nếu tiện ích Wokwi trong VS Code hết hạn. Mở [mẫu ESP32 nạp firmware của Wokwi](https://wokwi.com/projects/305457271083631168), dán nội dung sơ đồ mô phỏng vào tab diagram.json, rồi nhấn F1 trong tab mã nguồn. Chọn **Upload Firmware and Start Simulation…** và mở tệp .pio/build/esp32dev/firmware.bin đã build ở trên.
+
+Bản ILI9488/XPT2046 dùng môi trường `esp32dev-hardware`. Cấu hình mạng trong `include/smartmirror_secrets.h` bằng cách sao chép tệp mẫu cùng thư mục. Bản phần cứng chờ 60 giây để PIR ổn định. Chọn jumper **L** trên PIR và vặn **TIME** về mức ngắn. Vuốt trái/phải cần thử trên module thật để xác nhận chiều trục và ngưỡng vì mỗi màn điện trở có sai số cơ khí khác nhau.
+
+Khi làm thật, cần driver MOSFET và nguồn riêng cho đèn LED. Bản Wokwi dùng broker công cộng phục vụ demo. Bản phần cứng có thể chọn MQTT nếu cấu hình broker hoặc dùng nối USB/COM qua laptop như hướng dẫn ở đầu tài liệu. Dashboard web vẫn có thể dùng làm màn hình dự phòng.
 
 ## Sửa source và kiểm tra
 

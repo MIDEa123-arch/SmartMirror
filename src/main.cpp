@@ -4,80 +4,171 @@
 #include <MQTT.h>
 #include <esp_system.h>
 #include <math.h>
+#include <time.h>
+#include "mirror_display.h"
+#ifdef SMARTMIRROR_WOKWI
+#include <Wire.h>
+#include <Adafruit_FT6206.h>
+Adafruit_FT6206 touchController;
+#else
+#include <XPT2046_Touchscreen.h>
+XPT2046_Touchscreen touchController(16);
+#endif
+
+#if __has_include("smartmirror_secrets.h") && !defined(SMARTMIRROR_WOKWI)
+#include "smartmirror_secrets.h"
+#endif
 
 // Chan dung voi diagram.json hien tai
 constexpr int PIN_DHT = 15;
-constexpr int PIN_PAGE_BUTTON = 32; // Nut nhan noi GPIO32 voi GND
-constexpr int PIN_TRIG = 13;
-constexpr int PIN_ECHO = 14;
-constexpr int PIN_LED_MIRROR = 26;
-constexpr int PIN_LED_FAN = 27;
+constexpr int PIN_PIR = 14;
+constexpr int PIN_DISTANCE_TRIG = 13;
+constexpr int PIN_DISTANCE_ECHO = 21; // ECHO qua mach chia ap
+#ifdef SMARTMIRROR_WOKWI
+constexpr unsigned long PIR_WARMUP = 0UL;
+#else
+constexpr unsigned long PIR_WARMUP = 60000UL;
+#endif
+constexpr int PIN_MIRROR_LAMP = 27; // GPIO chi dieu khien driver/MOSFET, khong cap den truc tiep
+constexpr int PIN_LIGHT_ANALOG = 34; // ADC1, dung duoc khi Wi-Fi hoat dong
+constexpr int PIN_LIGHT_DIGITAL = 33;
+#ifdef SMARTMIRROR_WOKWI
+constexpr int PIN_TOUCH_SDA = 32;
+constexpr int PIN_TOUCH_SCL = 26;
+#else
+constexpr int PIN_TOUCH_MISO = 17; // T_DO cua XPT2046
+#endif
 
-// Nguong nhiet do bat/tat quat, don vi C
-constexpr float FAN_ON_TEMP = 32.0f;
-constexpr float FAN_OFF_TEMP = 30.0f;
 // Chu ky doc cam bien va gui MQTT
 constexpr unsigned long DHT_INTERVAL = 2000UL;
-// Khoang cach bat/giu sang guong, don vi cm
-constexpr float MIRROR_MIN_DISTANCE = 25.0f;
-constexpr float MIRROR_MAX_DISTANCE = 60.0f;
-// Chu ky phat xung kiem tra nguoi dung gan guong
-constexpr unsigned long DISTANCE_INTERVAL = 250UL;
-// Chong doi nut nhan
-constexpr unsigned long BUTTON_DEBOUNCE = 40UL;
+constexpr unsigned long DHT_STALE_TIMEOUT = 10000UL;
+constexpr unsigned long DISTANCE_INTERVAL = 150UL;
+constexpr unsigned long DISTANCE_STALE_TIMEOUT = 10000UL;
+constexpr unsigned long ECHO_TIMEOUT = 25000UL;
+constexpr int DISTANCE_MIN_MM = 20;
+constexpr int DISTANCE_MAX_MM = 2000;
+constexpr int DISTANCE_SENSOR_MAX_MM = 4000;
+constexpr int DISTANCE_CONFIRM_SAMPLES = 3;
+constexpr unsigned long MOTION_WINDOW = 3000UL;
+constexpr unsigned long LIGHT_INTERVAL = 250UL;
+constexpr unsigned long LIGHT_STALE_TIMEOUT = 2000UL;
+constexpr int LIGHT_FALLBACK_PWM = 96;
+constexpr int LAMP_FALLBACK_PWM = 128;
+constexpr int LIGHT_MIN_AUTO_PWM = 35;
+constexpr int LIGHT_BRIGHT_ADC = 550;
+constexpr int LIGHT_DARK_ADC = 2500;
+// Cu chi vuot ngang tren man hinh
+constexpr int SWIPE_MIN_DELTA =
+#ifdef SMARTMIRROR_WOKWI
+    70;
+#else
+    550;
+#endif
 // Tat guong
-constexpr unsigned long SLEEP_TIMEOUT = 120000UL;
+constexpr unsigned long SLEEP_TIMEOUT = 30000UL;
 // Chay lai ket noi
 constexpr unsigned long WIFI_RETRY = 10000UL;
 constexpr unsigned long MQTT_RETRY = 5000UL;
+constexpr unsigned long HEARTBEAT_INTERVAL = 5000UL;
+constexpr unsigned long DISPLAY_INTERVAL = 250UL;
 
+#ifdef SMARTMIRROR_WOKWI
 const char *WIFI_SSID = "Wokwi-GUEST";
 const char *WIFI_PASSWORD = "";
 const char *MQTT_SERVER = "broker.emqx.io";
 constexpr int MQTT_PORT = 1883;
+const char *MQTT_USER = "";
+const char *MQTT_PASSWORD = "";
+#else
+#ifndef SMARTMIRROR_WIFI_SSID
+#define SMARTMIRROR_WIFI_SSID ""
+#define SMARTMIRROR_WIFI_PASSWORD ""
+#define SMARTMIRROR_MQTT_HOST ""
+#define SMARTMIRROR_MQTT_PORT 1883
+#define SMARTMIRROR_MQTT_USER ""
+#define SMARTMIRROR_MQTT_PASSWORD ""
+#endif
+const char *WIFI_SSID = SMARTMIRROR_WIFI_SSID;
+const char *WIFI_PASSWORD = SMARTMIRROR_WIFI_PASSWORD;
+const char *MQTT_SERVER = SMARTMIRROR_MQTT_HOST;
+constexpr int MQTT_PORT = SMARTMIRROR_MQTT_PORT;
+const char *MQTT_USER = SMARTMIRROR_MQTT_USER;
+const char *MQTT_PASSWORD = SMARTMIRROR_MQTT_PASSWORD;
+#endif
 
 // Duong dan topic
 const char *TOPIC_TEMP = "smartmirror/demo01/sensor/temperature";
 const char *TOPIC_HUM = "smartmirror/demo01/sensor/humidity";
 const char *TOPIC_PAGE = "smartmirror/demo01/event/page";
-const char *TOPIC_CMD_MODE = "smartmirror/demo01/cmd/mode";
-const char *TOPIC_CMD_FAN = "smartmirror/demo01/cmd/fan";
-const char *TOPIC_CMD_LIGHT = "smartmirror/demo01/cmd/light";
-const char *TOPIC_STATE_FAN = "smartmirror/demo01/state/fan";
+const char *TOPIC_CMD_PAGE = "smartmirror/demo01/cmd/page";
+const char *TOPIC_STATE_PAGE = "smartmirror/demo01/state/page";
+const char *TOPIC_DISPLAY_CONTENT = "smartmirror/demo01/display/content";
+const char *TOPIC_STATE_LAMP = "smartmirror/demo01/state/lamp";
 const char *TOPIC_STATE_LIGHT = "smartmirror/demo01/state/light";
+const char *TOPIC_STATE_LIGHT_SENSOR = "smartmirror/demo01/state/light-sensor";
 const char *TOPIC_STATE_ACTIVE = "smartmirror/demo01/state/active";
-const char *TOPIC_STATE_MODE = "smartmirror/demo01/state/mode";
 const char *TOPIC_STATUS = "smartmirror/demo01/status";
 
 DHTesp dht;
 WiFiClient wifiClient;
-MQTTClient mqtt(256);
-String pendingMode, pendingFan, pendingLight;
+MQTTClient mqtt(768);
+String pendingContent;
+String serialLineBuffer;
+bool pendingContentFromSerial = false;
+int pendingDisplayPage = -1;
+uint8_t displayPage = 0;
 uint32_t pageSequence = 0;
 char bootId[17];
 
 float lastTemperature = NAN;
-bool autoMode = true;
-bool manualFan = false;
-bool fanOn = false;
+float lastHumidity = NAN;
+bool lampOn = false;
 bool mirrorActive = false;
-bool rawButtonPressed = false;
-bool stableButtonPressed = false;
-int desiredBrightness = 180; // Tu 0 den 255
-int lastLedOutput = -1;
+int distanceStreak = 0;
+bool pirWasHigh = false;
+bool pirWarmingUp = PIR_WARMUP != 0;
+bool motionPending = false;
+bool touchWasDown = false;
+bool swipeTracking = false;
+int touchStartX = 0;
+int touchLastX = 0;
+bool ambientAvailable = false;
+bool clockStarted = false;
+float filteredAmbient = 0;
+int autoBrightness = LIGHT_FALLBACK_PWM;
+int autoLampBrightness = 0;
+int displayBrightness = -1;
 
 unsigned long lastActivityTime = 0;
 unsigned long lastDhtRead = 0;
+unsigned long lastValidTemperatureAt = 0;
 unsigned long lastDistanceRead = 0;
-unsigned long buttonChangedAt = 0;
+unsigned long lastDistanceSampleAt = 0;
+unsigned long pirStartedAt = 0;
+unsigned long lastMotionAt = 0;
+unsigned long lastLightRead = 0;
+unsigned long lastValidLightAt = 0;
 unsigned long lastWiFiAttempt = 0;
 unsigned long lastMqttAttempt = 0;
+unsigned long lastHeartbeatAt = 0;
+unsigned long lastSerialHeartbeatAt = 0;
+unsigned long lastDisplayRefresh = 0;
 
 // Chi gui MQTT khi dang ket noi Broker
 void sendMQTT(const char *topic, const char *value, bool retained = false, int qos = 0)
 {
   if (mqtt.connected())
     mqtt.publish(topic, value, retained, qos);
+  // Mirror status also travels over the laptop's USB serial bridge. MQTT remains
+  // available for Wokwi and optional network operation.
+  const char *prefix = "smartmirror/demo01/";
+  if (strncmp(topic, prefix, strlen(prefix)) == 0)
+  {
+    Serial.print("@SMARTMIRROR|");
+    Serial.print(topic + strlen(prefix));
+    Serial.print('|');
+    Serial.println(value);
+  }
 }
 
 void sendNumber(const char *topic, int value, bool retained = false)
@@ -87,41 +178,114 @@ void sendNumber(const char *topic, int value, bool retained = false)
   sendMQTT(topic, buffer, retained);
 }
 
-// Dieu khien quat: AUTO theo nhiet do, MANUAL theo lenh
-void updateFan()
+bool hasFreshTemperature()
 {
-  bool nextFan = fanOn;
-  if (!autoMode)
-  {
-    nextFan = manualFan;
-  }
-  else if (!isnan(lastTemperature))
-  {
-    if (lastTemperature >= FAN_ON_TEMP)
-      nextFan = true;
-    else if (lastTemperature <= FAN_OFF_TEMP)
-      nextFan = false;
-    // O 30-32 C giu nguyen trang thai quat
-  }
+  return isfinite(lastTemperature) &&
+         millis() - lastValidTemperatureAt < DHT_STALE_TIMEOUT;
+}
 
-  if (nextFan != fanOn)
+bool hasControlConnection()
+{
+  return WiFi.status() == WL_CONNECTED && mqtt.connected();
+}
+
+bool hasLocalConnection()
+{
+  return hasControlConnection() || millis() - lastSerialHeartbeatAt < 15000UL;
+}
+
+void sendSerialFrame(const char *topic, const char *value)
+{
+  const char *prefix = "smartmirror/demo01/";
+  if (strncmp(topic, prefix, strlen(prefix)) != 0)
+    return;
+  Serial.print("@SMARTMIRROR|");
+  Serial.print(topic + strlen(prefix));
+  Serial.print('|');
+  Serial.println(value);
+}
+
+void sendSerialHeartbeat()
+{
+  sendSerialFrame(TOPIC_STATUS, "online");
+  sendSerialFrame(TOPIC_STATE_ACTIVE, mirrorActive ? "ACTIVE" : "SLEEP");
+  sendSerialFrame(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF");
+  char value[16];
+  snprintf(value, sizeof(value), "%d", displayBrightness);
+  sendSerialFrame(TOPIC_STATE_LIGHT, value);
+  sendSerialFrame(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK");
+  snprintf(value, sizeof(value), "%u", displayPage);
+  sendSerialFrame(TOPIC_STATE_PAGE, value);
+  if (hasFreshTemperature())
   {
-    fanOn = nextFan;
-    digitalWrite(PIN_LED_FAN, fanOn ? HIGH : LOW);
-    Serial.println(fanOn ? "Quat: BAT" : "Quat: TAT");
-    sendMQTT(TOPIC_STATE_FAN, fanOn ? "ON" : "OFF", true);
+    snprintf(value, sizeof(value), "%.1f", lastTemperature);
+    sendSerialFrame(TOPIC_TEMP, value);
+    snprintf(value, sizeof(value), "%.1f", lastHumidity);
+    sendSerialFrame(TOPIC_HUM, value);
   }
 }
 
-// LED trang PWM va trang thai giao dien guong
-void updateMirrorLed()
+// Den guong la ngo ra rieng; gương ngủ thì ngắt đèn để giữ trạng thái an toàn.
+void updateLampBrightness();
+
+void setLamp()
 {
-  int output = mirrorActive ? desiredBrightness : 0;
-  if (output == lastLedOutput)
+  updateLampBrightness();
+}
+
+void updateLampBrightness()
+{
+  const int target = ambientAvailable ? autoLampBrightness : LAMP_FALLBACK_PWM;
+  const int level = mirrorActive ? target : 0;
+  const bool on = level > 0;
+  analogWrite(PIN_MIRROR_LAMP, level);
+  if (lampOn != on)
+  {
+    lampOn = on;
+    Serial.println(lampOn ? "Den guong: BAT" : "Den guong: TAT");
+    sendMQTT(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF", true);
+  }
+}
+
+// Dieu khien do sang den nen TFT va bao trang thai len Dashboard.
+void updateDisplayBrightness()
+{
+  const int output = mirrorActive ? (ambientAvailable ? autoBrightness : LIGHT_FALLBACK_PWM) : 0;
+  if (output == displayBrightness)
     return;
-  lastLedOutput = output;
-  analogWrite(PIN_LED_MIRROR, output);
+  displayBrightness = output;
+  setMirrorBacklight(static_cast<uint8_t>(displayBrightness));
+  updateLampBrightness();
   sendNumber(TOPIC_STATE_LIGHT, output, true);
+}
+
+void readAmbientLight(unsigned long now)
+{
+  const int raw = analogRead(PIN_LIGHT_ANALOG);
+  const bool dark = digitalRead(PIN_LIGHT_DIGITAL) == HIGH;
+  // AO bi keo LOW va DO bi keo HIGH khi module bi rut. Cung bat loi chap
+  // o hai dau ADC neu AO va DO mau thuan, van cho phep toi/sang cuc do.
+  const bool valid = dark ? raw >= 24 : raw <= 4070;
+  const bool hadRecentSample = ambientAvailable && now - lastValidLightAt < LIGHT_STALE_TIMEOUT;
+  if (valid)
+  {
+    lastValidLightAt = now;
+    filteredAmbient = hadRecentSample ? filteredAmbient + (raw - filteredAmbient) * 0.25f : raw;
+    const int adc = constrain(static_cast<int>(filteredAmbient + 0.5f), LIGHT_BRIGHT_ADC, LIGHT_DARK_ADC);
+    const int target = map(adc, LIGHT_DARK_ADC, LIGHT_BRIGHT_ADC, LIGHT_MIN_AUTO_PWM, 255);
+    const int lampTarget = map(adc, LIGHT_BRIGHT_ADC, LIGHT_DARK_ADC, 0, 255);
+    if (abs(lampTarget - autoLampBrightness) >= 4 || lampTarget == 0 || lampTarget == 255)
+      autoLampBrightness = lampTarget;
+    if (!hadRecentSample || abs(target - autoBrightness) >= 4 ||
+        target == LIGHT_MIN_AUTO_PWM || target == 255)
+      autoBrightness = target;
+  }
+  const bool previouslyAvailable = ambientAvailable;
+  ambientAvailable = valid || hadRecentSample;
+  updateDisplayBrightness();
+  updateLampBrightness();
+  if (previouslyAvailable != ambientAvailable)
+    sendMQTT(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK", true);
 }
 
 void setMirrorActive(bool active)
@@ -129,16 +293,24 @@ void setMirrorActive(bool active)
   if (mirrorActive == active)
     return;
   mirrorActive = active;
+  if (active)
+    displayPage = 0;
+  else
+    sleepMirrorDisplay();
   Serial.println(active ? "Guong: ACTIVE" : "Guong: SLEEP");
-  updateMirrorLed();
+  setLamp();
+  updateDisplayBrightness();
   sendMQTT(TOPIC_STATE_ACTIVE, active ? "ACTIVE" : "SLEEP", true);
+  if (active)
+    sendNumber(TOPIC_STATE_PAGE, displayPage);
 }
 
 // DHT22: doc va gui nhiet do, do am
 void readDHT()
 {
   TempAndHumidity data = dht.getTempAndHumidity();
-  if (isnan(data.temperature) || isnan(data.humidity))
+  if (!isfinite(data.temperature) || data.temperature < -40 || data.temperature > 80 ||
+      !isfinite(data.humidity) || data.humidity < 0 || data.humidity > 100)
   {
     Serial.printf("Loi doc DHT22 tai GPIO%d: %s\n", PIN_DHT,
                   dht.getStatusString());
@@ -146,10 +318,10 @@ void readDHT()
   }
 
   lastTemperature = data.temperature;
+  lastHumidity = data.humidity;
+  lastValidTemperatureAt = millis();
   Serial.printf("Nhiet do: %.1f C | Do am: %.1f %%\n",
                 data.temperature, data.humidity);
-  updateFan();
-
   if (mqtt.connected())
   {
     char buffer[16];
@@ -160,138 +332,189 @@ void readDHT()
   }
 }
 
-// Diem tich hop man hinh sau nay. Hien NEXT chi duoc xem o Node-RED Debug.
-void requestNextPage()
+void requestPage(int direction)
 {
   lastActivityTime = millis();
-  Serial.println("Button: NEXT PAGE");
+  displayPage = (displayPage + DISPLAY_PAGE_COUNT + direction) % DISPLAY_PAGE_COUNT;
+  sendNumber(TOPIC_STATE_PAGE, displayPage);
+  const char *eventName = direction > 0 ? "NEXT" : "PREV";
+  Serial.printf("Touch: %s PAGE\n", eventName);
   if (!mqtt.connected())
   {
-    Serial.println("NEXT khong gui: MQTT offline");
+    Serial.println("Page event khong gui: MQTT offline");
     return;
   }
   char payload[160];
   snprintf(payload, sizeof(payload),
-           "{\"event\":\"NEXT\",\"bootId\":\"%s\",\"sequence\":%lu}",
-           bootId, static_cast<unsigned long>(++pageSequence));
+           "{\"event\":\"%s\",\"bootId\":\"%s\",\"sequence\":%lu}",
+           eventName, bootId, static_cast<unsigned long>(++pageSequence));
   if (!mqtt.publish(TOPIC_PAGE, payload, false, 1))
-    Serial.println("NEXT chua duoc broker xac nhan; khong luu lenh cu");
+    Serial.println("Page event chua duoc broker xac nhan");
 }
 
-void readPageButton()
+void readPageTouch()
 {
-  const unsigned long now = millis();
-  const bool pressed = digitalRead(PIN_PAGE_BUTTON) == LOW;
-  if (pressed != rawButtonPressed)
+  bool down = false;
+  int x = 0;
+#ifdef SMARTMIRROR_WOKWI
+  if (touchController.touched())
   {
-    rawButtonPressed = pressed;
-    buttonChangedAt = now;
+    const TS_Point point = touchController.getPoint();
+    down = true;
+    x = point.y; // FT6206 ngang voi truc Y o rotation=1.
   }
-
-  if (now - buttonChangedAt < BUTTON_DEBOUNCE ||
-      stableButtonPressed == rawButtonPressed)
-    return;
-
-  stableButtonPressed = rawButtonPressed;
-  // Chi nhan canh nhan; giu nut khong lap. Nut khong danh thuc guong.
-  // Do sang den khong anh huong den viec chuyen trang.
-  if (stableButtonPressed && mirrorActive)
-    requestNextPage();
+#else
+  if (touchController.touched())
+  {
+    const TS_Point point = touchController.getPoint();
+    down = true;
+    x = point.y; // XPT2046: truc ngang sau rotation=1, xem README de hieu chuan.
+  }
+#endif
+  if (down && !touchWasDown)
+  {
+    touchStartX = x;
+    touchLastX = x;
+    swipeTracking = mirrorActive;
+  }
+  if (down)
+    touchLastX = x;
+  if (!down && touchWasDown && swipeTracking && mirrorActive)
+  {
+    const int delta = touchLastX - touchStartX;
+    if (abs(delta) >= SWIPE_MIN_DELTA)
+      requestPage(delta < 0 ? 1 : -1);
+    swipeTracking = false;
+  }
+  touchWasDown = down;
 }
 
-// HC-SR04: do khoang cach de bat/giu sang guong
-float readDistanceCm()
+int readDistanceMillimeters()
 {
-  digitalWrite(PIN_TRIG, LOW);
-  delayMicroseconds(2);
-  digitalWrite(PIN_TRIG, HIGH);
+  digitalWrite(PIN_DISTANCE_TRIG, HIGH);
   delayMicroseconds(10);
-  digitalWrite(PIN_TRIG, LOW);
+  digitalWrite(PIN_DISTANCE_TRIG, LOW);
 
-  unsigned long duration = pulseIn(PIN_ECHO, HIGH, 25000UL);
-  if (duration == 0)
-    return -1.0f;
-  return duration * 0.0343f / 2.0f;
+  const unsigned long echoUs = pulseIn(PIN_DISTANCE_ECHO, HIGH, ECHO_TIMEOUT);
+  const int millimeters = (echoUs * 10 + 29) / 58; // 58 us cho moi cm, lam tron den mm
+  return millimeters >= DISTANCE_MIN_MM && millimeters <= DISTANCE_SENSOR_MAX_MM
+             ? millimeters : -1;
 }
 
 void readPresenceDistance()
 {
-  const float distance = readDistanceCm();
-  if (distance < 0)
-    return; // Khong nhan duoc xung ECHO hop le
-
+  const int millimeters = readDistanceMillimeters();
   const unsigned long now = millis();
-
-  // Trong nguong khoang cach: co nguoi dang dung gan guong.
-  // Neu cam bien huong vao vat can co dinh, guong se luon ACTIVE.
-  if (distance >= MIRROR_MIN_DISTANCE && distance < MIRROR_MAX_DISTANCE)
+  if (millimeters < 0)
   {
-    lastActivityTime = now;
-    setMirrorActive(true);
+    distanceStreak = 0;
+    return;
   }
+  if (now - lastDistanceSampleAt >= 3 * DISTANCE_INTERVAL)
+    distanceStreak = 0;
+  lastDistanceSampleAt = now;
+  if (millimeters > DISTANCE_MAX_MM)
+    distanceStreak = 0;
+  else if (distanceStreak < DISTANCE_CONFIRM_SAMPLES)
+    ++distanceStreak;
+}
+
+void readMotion(unsigned long now)
+{
+  const bool high = digitalRead(PIN_PIR) == HIGH;
+  const bool rising = high && !pirWasHigh;
+  pirWasHigh = high;
+  if (pirWarmingUp)
+  {
+    if (now - pirStartedAt >= PIR_WARMUP)
+      pirWarmingUp = false;
+    return;
+  }
+  if (rising)
+  {
+    lastMotionAt = now;
+    motionPending = true;
+  }
+}
+
+void confirmPresence(unsigned long now)
+{
+  if (!motionPending)
+    return;
+  if (now - lastMotionAt > MOTION_WINDOW)
+  {
+    motionPending = false;
+    return;
+  }
+  if (distanceStreak < DISTANCE_CONFIRM_SAMPLES ||
+      now - lastDistanceSampleAt >= 2 * DISTANCE_INTERVAL)
+    return;
+
+  // Moi canh PIR chi duoc ghep voi mot lan xac nhan khoang cach.
+  motionPending = false;
+  lastActivityTime = now;
+  setMirrorActive(true);
 }
 
 // Nhan lenh MQTT tu Node-RED
 // Callback chi luu lenh; khong publish long nhau khi dang cho PUBACK.
 void mqttCallback(String &topic, String &message)
 {
-  if (message.length() > 32) return;
-  if (topic == TOPIC_CMD_MODE) pendingMode = message;
-  else if (topic == TOPIC_CMD_FAN) pendingFan = message;
-  else if (topic == TOPIC_CMD_LIGHT) pendingLight = message;
+  if (topic == TOPIC_DISPLAY_CONTENT)
+  {
+    if (message.length() <= DISPLAY_DATA_LIMIT)
+    {
+      pendingContent = message;
+      pendingContentFromSerial = false;
+    }
+    return;
+  }
+  if (topic == TOPIC_CMD_PAGE)
+  {
+    if (message.length() == 1 && message[0] >= '0' && message[0] < '0' + DISPLAY_PAGE_COUNT)
+      pendingDisplayPage = message[0] - '0';
+    return;
+  }
+  (void)topic;
+  (void)message;
 }
 
-void applyCommand(const String &receivedTopic, const String &message)
+// USB protocol: laptop sends `SMIRROR <JSON>\\n`; debug text is ignored.
+// ESP32 returns telemetry as `@SMARTMIRROR|topic-tail|value\\n`.
+void readLaptopSerial()
 {
-  if (receivedTopic == TOPIC_CMD_MODE)
+  while (Serial.available())
   {
-    if (message == "AUTO")
-      autoMode = true;
-    else if (message == "MANUAL")
-      autoMode = false;
-    else
-      return;
-    updateFan();
-    sendMQTT(TOPIC_STATE_MODE, autoMode ? "AUTO" : "MANUAL", true);
-  }
-  else if (receivedTopic == TOPIC_CMD_FAN)
-  {
-    if (message == "ON")
-      manualFan = true;
-    else if (message == "OFF")
-      manualFan = false;
-    else
-      return;
-    if (!autoMode)
-      updateFan();
-  }
-  else if (receivedTopic == TOPIC_CMD_LIGHT)
-  {
-    if (message.length() == 0 || message.length() > 3)
-      return;
-
-    for (unsigned int i = 0; i < message.length(); i++)
+    const char ch = static_cast<char>(Serial.read());
+    if (ch == '\r')
+      continue;
+    if (ch != '\n')
     {
-      if (message[i] < '0' || message[i] > '9')
-        return;
+      if (serialLineBuffer.length() <= DISPLAY_DATA_LIMIT + 16)
+        serialLineBuffer += ch;
+      else
+        serialLineBuffer = "!overflow";
+      continue;
     }
-
-    int value = message.toInt();
-
-    if (value < 0 || value > 255)
-      return;
-
-    // Luu do sang tu Slider
-    desiredBrightness = value;
-
-    // Cap nhat LED trang tai GPIO26
-    updateMirrorLed();
+    if (serialLineBuffer.startsWith("SMIRROR "))
+    {
+      const String content = serialLineBuffer.substring(8);
+      if (content.length() > 0 && content.length() <= DISPLAY_DATA_LIMIT)
+      {
+        pendingContent = content;
+        pendingContentFromSerial = true;
+        lastSerialHeartbeatAt = millis();
+      }
+    }
+    serialLineBuffer = "";
   }
 }
 
 // Ket noi mang: thu lai theo chu ky, khong co vong while vo han
 void maintainConnections(unsigned long now)
 {
+  if (!WIFI_SSID[0])
+    return;
   if (WiFi.status() != WL_CONNECTED)
   {
     if (now - lastWiFiAttempt >= WIFI_RETRY)
@@ -303,6 +526,14 @@ void maintainConnections(unsigned long now)
     return;
   }
 
+  if (!clockStarted)
+  {
+    clockStarted = true;
+    configTime(0, 0, "time.google.com", "pool.ntp.org");
+  }
+  if (!MQTT_SERVER[0])
+    return;
+
   if (!mqtt.connected() && now - lastMqttAttempt >= MQTT_RETRY)
   {
     lastMqttAttempt = now;
@@ -310,17 +541,18 @@ void maintainConnections(unsigned long now)
     clientId += WiFi.macAddress();
     clientId.replace(":", "");
 
-    if (mqtt.connect(clientId.c_str()))
+    if (mqtt.connect(clientId.c_str(), MQTT_USER[0] ? MQTT_USER : nullptr,
+                     MQTT_USER[0] ? MQTT_PASSWORD : nullptr))
     {
       Serial.println("MQTT da ket noi");
-      mqtt.subscribe(TOPIC_CMD_MODE, 1);
-      mqtt.subscribe(TOPIC_CMD_FAN, 1);
-      mqtt.subscribe(TOPIC_CMD_LIGHT, 1);
-      sendMQTT(TOPIC_STATUS, "online", true);
-      sendMQTT(TOPIC_STATE_MODE, autoMode ? "AUTO" : "MANUAL", true);
-      sendMQTT(TOPIC_STATE_FAN, fanOn ? "ON" : "OFF", true);
+      mqtt.subscribe(TOPIC_CMD_PAGE, 1);
+      mqtt.subscribe(TOPIC_DISPLAY_CONTENT);
+      sendMQTT(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF", true);
       sendMQTT(TOPIC_STATE_ACTIVE, mirrorActive ? "ACTIVE" : "SLEEP", true);
-      sendNumber(TOPIC_STATE_LIGHT, mirrorActive ? desiredBrightness : 0, true);
+      sendNumber(TOPIC_STATE_LIGHT, displayBrightness, true);
+      sendMQTT(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK", true);
+      sendMQTT(TOPIC_STATUS, "online", true, 1);
+      sendNumber(TOPIC_STATE_PAGE, displayPage);
     }
     else
     {
@@ -329,7 +561,16 @@ void maintainConnections(unsigned long now)
   }
 
   if (mqtt.connected())
+  {
     mqtt.loop();
+    if (now - lastHeartbeatAt >= HEARTBEAT_INTERVAL)
+    {
+      lastHeartbeatAt = now;
+      // Heartbeat doc lap voi DHT22 de den van dieu khien duoc khi cam bien loi.
+      sendMQTT(TOPIC_STATUS, "online");
+      sendNumber(TOPIC_STATE_PAGE, displayPage);
+    }
+  }
 }
 
 void setup()
@@ -337,27 +578,38 @@ void setup()
   Serial.begin(115200);
   pinMode(PIN_DHT, INPUT_PULLUP);
   dht.setup(PIN_DHT, DHTesp::DHT22);
-  pinMode(PIN_PAGE_BUTTON, INPUT_PULLUP);
-  // Giu nut luc khoi dong: can tha ra roi nhan lai.
-  rawButtonPressed = digitalRead(PIN_PAGE_BUTTON) == LOW;
-  stableButtonPressed = rawButtonPressed;
-  buttonChangedAt = millis();
-  pinMode(PIN_TRIG, OUTPUT);
-  pinMode(PIN_ECHO, INPUT);
-  pinMode(PIN_LED_MIRROR, OUTPUT);
-  pinMode(PIN_LED_FAN, OUTPUT);
-  digitalWrite(PIN_TRIG, LOW);
-  digitalWrite(PIN_LED_FAN, LOW);
-  updateMirrorLed();
+#ifdef SMARTMIRROR_WOKWI
+  Wire.begin(PIN_TOUCH_SDA, PIN_TOUCH_SCL);
+  if (!touchController.begin(40)) Serial.println("Khong tim thay FT6206 touch");
+#else
+  SPI.begin(18, PIN_TOUCH_MISO, 23, 16);
+  touchController.begin();
+  touchController.setRotation(1);
+#endif
+  pinMode(PIN_PIR, INPUT_PULLDOWN);
+  pirWasHigh = digitalRead(PIN_PIR) == HIGH;
+  pirStartedAt = millis();
+  pinMode(PIN_DISTANCE_TRIG, OUTPUT);
+  digitalWrite(PIN_DISTANCE_TRIG, LOW);
+  pinMode(PIN_DISTANCE_ECHO, INPUT);
+  pinMode(PIN_MIRROR_LAMP, OUTPUT);
+  pinMode(PIN_LIGHT_DIGITAL, INPUT_PULLUP);
+  analogReadResolution(12);
+  analogSetPinAttenuation(PIN_LIGHT_ANALOG, ADC_11db);
+  digitalWrite(PIN_MIRROR_LAMP, LOW);
+  beginMirrorDisplay();
+  updateDisplayBrightness();
 
   snprintf(bootId, sizeof(bootId), "%08lx%08lx",
            static_cast<unsigned long>(esp_random()), static_cast<unsigned long>(esp_random()));
-  mqtt.begin(MQTT_SERVER, MQTT_PORT, wifiClient);
+  if (MQTT_SERVER[0])
+    mqtt.begin(MQTT_SERVER, MQTT_PORT, wifiClient);
   mqtt.onMessage(mqttCallback);
   mqtt.setOptions(15, true, 1000);
   mqtt.setWill(TOPIC_STATUS, "offline", true, 1);
   WiFi.mode(WIFI_STA);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
+  if (WIFI_SSID[0])
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
   lastWiFiAttempt = millis();
   lastActivityTime = millis();
   Serial.println("ESP32 da khoi dong");
@@ -365,36 +617,71 @@ void setup()
 
 void loop()
 {
-  unsigned long now = millis();
-  maintainConnections(now);
-  // Lenh dieu khien la gia tri dich: khi nhan nhanh, ap dung gia tri moi nhat.
-  String mode = pendingMode, fan = pendingFan, light = pendingLight;
-  pendingMode = pendingFan = pendingLight = "";
-  if (mode.length()) applyCommand(TOPIC_CMD_MODE, mode);
-  if (fan.length()) applyCommand(TOPIC_CMD_FAN, fan);
-  if (light.length()) applyCommand(TOPIC_CMD_LIGHT, light);
-
-  if (now - lastDhtRead >= DHT_INTERVAL)
+  readLaptopSerial();
+  const unsigned long serialTime = millis();
+  if (serialTime - lastSerialHeartbeatAt >= HEARTBEAT_INTERVAL)
   {
-    lastDhtRead = now;
-    readDHT();
+    lastSerialHeartbeatAt = serialTime;
+    sendSerialHeartbeat();
   }
-
+  const unsigned long now = millis();
+  readMotion(now);
   if (now - lastDistanceRead >= DISTANCE_INTERVAL)
   {
     lastDistanceRead = now;
     readPresenceDistance();
   }
+  confirmPresence(millis());
+  if (mirrorActive && distanceStreak >= DISTANCE_CONFIRM_SAMPLES)
+    lastActivityTime = millis();
+  maintainConnections(now);
+  if (millis() - lastDhtRead >= DHT_INTERVAL)
+  {
+    readDHT();
+    lastDhtRead = millis();
+  }
 
-  // Doc nut sau khoang cach de dung trang thai ACTIVE moi nhat.
-  readPageButton();
+  const unsigned long sensorTime = millis();
+  if (sensorTime - lastLightRead >= LIGHT_INTERVAL)
+  {
+    lastLightRead = sensorTime;
+    readAmbientLight(millis());
+  }
+
+  // Doc cam ung sau cam bien khoang cach de dung trang thai ACTIVE moi nhat.
+  readPageTouch();
 
   // Doc lai thoi gian sau khi cam bien cap nhat lastActivityTime.
   // Dung 'now' dau vong lap co the gay tran phep tru unsigned.
   const unsigned long sleepCheckTime = millis();
-  if (mirrorActive && sleepCheckTime - lastActivityTime >= SLEEP_TIMEOUT)
+  if (mirrorActive && (sleepCheckTime - lastActivityTime >= SLEEP_TIMEOUT ||
+                       sleepCheckTime - lastDistanceSampleAt >= DISTANCE_STALE_TIMEOUT))
   {
     setMirrorActive(false);
+  }
+  if (pendingContent.length() && (pendingContentFromSerial || hasControlConnection()))
+  {
+    receiveMirrorContent(pendingContent);
+  }
+  if (hasControlConnection())
+  {
+    if (pendingDisplayPage >= 0 && mirrorActive)
+    {
+      displayPage = pendingDisplayPage;
+      sendNumber(TOPIC_STATE_PAGE, displayPage);
+    }
+  }
+  pendingContent = "";
+  pendingContentFromSerial = false;
+  pendingDisplayPage = -1;
+
+  const auto displayTime = millis();
+  if (mirrorActive && displayTime - lastDisplayRefresh >= DISPLAY_INTERVAL)
+  {
+    lastDisplayRefresh = displayTime;
+    showMirrorDisplay(displayPage, {lastTemperature, lastHumidity, hasFreshTemperature(),
+                                    lampOn, hasControlConnection()});
+    setMirrorBacklight(static_cast<uint8_t>(displayBrightness));
   }
   delay(10);
 }

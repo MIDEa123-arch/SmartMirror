@@ -6,3 +6,4 @@ compile_commands.json
 .vscode/ipch
 .runtime/
 node_modules/
+/include/smartmirror_secrets.h

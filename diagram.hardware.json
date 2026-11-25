@@ -1,0 +1,565 @@
+{
+  "version": 1,
+  "author": "Guong thong minh IoT",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-breadboard-half",
+      "id": "bb",
+      "top": 188,
+      "left": -166,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "rail_top",
+      "top": 165,
+      "left": -166,
+      "attrs": {
+        "text": "Thanh trên: 3V3 / GND"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "rail_bottom",
+      "top": 400,
+      "left": -166,
+      "attrs": {
+        "text": "Thanh dưới: 5 V / GND"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "echo_note",
+      "top": 426,
+      "left": -166,
+      "attrs": {
+        "text": "Tham chiếu lắp thật: ECHO qua 1 kΩ và 1,5 kΩ tới GPIO21."
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "backlight_note",
+      "top": 450,
+      "left": 240,
+      "attrs": {
+        "text": "GPIO19 -> driver BL theo bo TFT; không cấp dòng LED từ ESP32."
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "lamp_label",
+      "top": 306,
+      "left": 221,
+      "attrs": {
+        "text": "Đèn gương · PWM tự động"
+      }
+    },
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": -67.2,
+      "left": -4.76,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-ili9341",
+      "id": "tft",
+      "top": -48,
+      "left": 232,
+      "rotate": 90,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -220.5,
+      "left": -120.6,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-hc-sr04",
+      "id": "ultrasonic1",
+      "top": -100,
+      "left": -240,
+      "attrs": {
+        "distance": "300"
+      }
+    },
+    {
+      "type": "wokwi-pir-motion-sensor",
+      "id": "pir1",
+      "top": -100,
+      "left": -385,
+      "attrs": {
+        "delayTime": "3",
+        "retrigger": "0"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_echo_series",
+      "top": 257.4,
+      "left": -131,
+      "attrs": {
+        "value": "1000"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_echo_ground",
+      "top": 267,
+      "left": -73.4,
+      "attrs": {
+        "value": "1500"
+      }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ambient",
+      "top": 55,
+      "left": -293,
+      "attrs": {
+        "lux": "300",
+        "threshold": "1.65"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_ambient",
+      "top": 316.2,
+      "left": -121.4,
+      "attrs": {
+        "value": "100000"
+      }
+    },
+    {
+      "type": "wokwi-led",
+      "id": "led_lamp",
+      "top": 303,
+      "left": 172,
+      "attrs": {
+        "color": "blue"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r_lamp",
+      "top": 316.2,
+      "left": -35,
+      "attrs": {
+        "value": "330"
+      }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r3",
+      "top": 257.4,
+      "left": 13,
+      "attrs": {
+        "value": "10000"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "touch_note",
+      "top": 474,
+      "left": 220,
+      "attrs": {
+        "text": "ILI9488 + XPT2046: CLK18 DIN23 CS16 DO17 · IRQ bỏ trống"
+      }
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "esp:3V3",
+      "bb:tp.12",
+      "orange",
+      [
+        "h-18",
+        "v53"
+      ]
+    ],
+    [
+      "esp:GND.1",
+      "bb:tn.13",
+      "black",
+      [
+        "h-12",
+        "v62"
+      ]
+    ],
+    [
+      "esp:5V",
+      "bb:bp.15",
+      "red",
+      [
+        "h-32",
+        "v69",
+        "h-154",
+        "v223"
+      ]
+    ],
+    [
+      "bb:tn.25",
+      "bb:bn.25",
+      "black",
+      [
+        "h27",
+        "*",
+        "h27"
+      ]
+    ],
+    [
+      "tft:VCC",
+      "bb:tp.24",
+      "orange",
+      [
+        "h-18",
+        "v0"
+      ]
+    ],
+    [
+      "tft:GND",
+      "bb:tn.24",
+      "black",
+      [
+        "h-24",
+        "v0"
+      ]
+    ],
+    [
+      "tft:CS",
+      "esp:22",
+      "yellow",
+      [
+        "h-32",
+        "v0"
+      ]
+    ],
+    [
+      "tft:D/C",
+      "esp:25",
+      "blue",
+      [
+        "h-38",
+        "v0"
+      ]
+    ],
+    [
+      "tft:RST",
+      "esp:4",
+      "orange",
+      [
+        "h-43",
+        "v0"
+      ]
+    ],
+    [
+      "tft:MOSI",
+      "esp:23",
+      "green",
+      [
+        "h-44",
+        "v0"
+      ]
+    ],
+    [
+      "tft:SCK",
+      "esp:18",
+      "purple",
+      [
+        "h-50",
+        "v0"
+      ]
+    ],
+    [
+      "dht1:VCC",
+      "bb:tp.7",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "dht1:GND",
+      "bb:tn.8",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "dht1:SDA",
+      "bb:17t.a",
+      "green",
+      [
+        "v18"
+      ]
+    ],
+    [
+      "esp:15",
+      "bb:17t.b",
+      "green",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "r3:1",
+      "bb:17t.d",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r3:2",
+      "bb:23t.d",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "bb:23t.a",
+      "bb:tp.19",
+      "orange",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "ultrasonic1:VCC",
+      "bb:bp.4",
+      "red",
+      [
+        "v24",
+        "h-22",
+        "v265"
+      ]
+    ],
+    [
+      "ultrasonic1:GND",
+      "bb:bn.5",
+      "black",
+      [
+        "v30",
+        "h-29",
+        "v275"
+      ]
+    ],
+    [
+      "ultrasonic1:TRIG",
+      "esp:13",
+      "green",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "ultrasonic1:ECHO",
+      "bb:2t.a",
+      "yellow",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "r_echo_series:1",
+      "bb:2t.d",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r_echo_series:2",
+      "bb:8t.d",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r_echo_ground:1",
+      "bb:8t.e",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r_echo_ground:2",
+      "bb:14t.e",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "esp:21",
+      "bb:8t.a",
+      "yellow",
+      [
+        "h50",
+        "v35"
+      ]
+    ],
+    [
+      "bb:14t.a",
+      "bb:tn.11",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "pir1:VCC",
+      "bb:bp.2",
+      "red",
+      [
+        "v24",
+        "h-24",
+        "v311"
+      ]
+    ],
+    [
+      "pir1:OUT",
+      "esp:14",
+      "blue",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "pir1:GND",
+      "bb:bn.3",
+      "black",
+      [
+        "v30",
+        "h-32",
+        "v318"
+      ]
+    ],
+    [
+      "ambient:VCC",
+      "bb:tp.2",
+      "orange",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "ambient:GND",
+      "bb:tn.3",
+      "black",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "ambient:AO",
+      "bb:3b.f",
+      "brown",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "ambient:DO",
+      "esp:33",
+      "blue",
+      [
+        "h0"
+      ]
+    ],
+    [
+      "esp:34",
+      "bb:3b.g",
+      "brown",
+      [
+        "h-38",
+        "v108"
+      ]
+    ],
+    [
+      "r_ambient:1",
+      "bb:3b.h",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r_ambient:2",
+      "bb:9b.h",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "bb:9b.j",
+      "bb:bn.7",
+      "black",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "esp:27",
+      "bb:12b.f",
+      "green",
+      [
+        "h-23",
+        "v97"
+      ]
+    ],
+    [
+      "r_lamp:1",
+      "bb:12b.h",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "r_lamp:2",
+      "bb:18b.h",
+      "",
+      [
+        "$bb"
+      ]
+    ],
+    [
+      "led_lamp:A",
+      "bb:18b.g",
+      "green",
+      [
+        "v0"
+      ]
+    ],
+    [
+      "led_lamp:C",
+      "bb:bn.23",
+      "black",
+      [
+        "v0"
+      ]
+    ]
+  ],
+  "dependencies": {}
+}

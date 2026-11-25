@@ -22,6 +22,116 @@
         "info": "Hai màn hình Dashboard nhận chung trạng thái và gửi yêu cầu về tab xử lý."
     },
     {
+        "id": "dc29b5681134edb7",
+        "type": "mqtt-broker",
+        "name": "SmartMirror",
+        "broker": "broker.emqx.io",
+        "port": 1883,
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": 4,
+        "keepalive": 60,
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthRetain": "false",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closeRetain": "false",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willRetain": "false",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "0988a90484e1800b",
+        "type": "ui-base",
+        "name": "SmartMirror",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "ce73f4caa30ee6a1",
+        "type": "ui-theme",
+        "name": "Smart Mirror Theme",
+        "colors": {
+            "surface": "#10191e",
+            "primary": "#83d9c3",
+            "bgPage": "#081014",
+            "groupBg": "#10191e",
+            "groupOutline": "#24363d"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "4px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "894ab83c0f59fd0f",
+        "type": "global-config",
+        "env": [],
+        "modules": {
+            "@flowfuse/node-red-dashboard": "1.34.0"
+        }
+    },
+    {
+        "id": "3796b772c7196a4c",
+        "type": "ui-page",
+        "name": "Lịch hoạt động",
+        "ui": "0988a90484e1800b",
+        "path": "/guong-thong-minh",
+        "icon": "calendar-month",
+        "layout": "grid",
+        "theme": "ce73f4caa30ee6a1",
+        "breakpoints": [
+            {
+                "name": "Mobile",
+                "px": "0",
+                "cols": "3"
+            },
+            {
+                "name": "Tablet",
+                "px": "576",
+                "cols": "6"
+            },
+            {
+                "name": "Desktop",
+                "px": "1024",
+                "cols": "12"
+            }
+        ],
+        "tabs": [],
+        "order": 2,
+        "className": "",
+        "visible": true,
+        "disabled": false
+    },
+    {
         "id": "ad7e97a894add6b8",
         "type": "mqtt in",
         "z": "sm-tab-mqtt",
@@ -81,7 +191,7 @@
         "id": "22ce5028265d1c2f",
         "type": "debug",
         "z": "sm-tab-mqtt",
-        "name": "Xem NEXT hợp lệ",
+        "name": "Xem vuốt hợp lệ",
         "active": false,
         "tosidebar": true,
         "console": false,
@@ -122,7 +232,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 570,
-        "y": 450,
+        "y": 370,
         "wires": []
     },
     {
@@ -138,7 +248,7 @@
         "statusVal": "",
         "statusType": "auto",
         "x": 570,
-        "y": 530,
+        "y": 450,
         "wires": []
     },
     {
@@ -167,7 +277,7 @@
         "id": "522eede8e05cdc63",
         "type": "mqtt in",
         "z": "sm-tab-mqtt",
-        "name": "Nút chuyển trang",
+        "name": "Vuốt chuyển trang",
         "topic": "smartmirror/demo01/event/page",
         "qos": "1",
         "datatype": "auto-detect",
@@ -185,28 +295,6 @@
         ]
     },
     {
-        "id": "5c8f4e6589b47581",
-        "type": "mqtt in",
-        "z": "sm-tab-mqtt",
-        "name": "Trạng thái quạt",
-        "topic": "smartmirror/demo01/state/fan",
-        "qos": "1",
-        "datatype": "auto-detect",
-        "broker": "dc29b5681134edb7",
-        "nl": false,
-        "rap": true,
-        "rh": 0,
-        "inputs": 0,
-        "x": 210,
-        "y": 370,
-        "wires": [
-            [
-                "269bf16cd974482f",
-                "sm-data-out"
-            ]
-        ]
-    },
-    {
         "id": "ccaee23e940b1837",
         "type": "mqtt in",
         "z": "sm-tab-mqtt",
@@ -220,7 +308,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 210,
-        "y": 450,
+        "y": 370,
         "wires": [
             [
                 "e5803147857f50df",
@@ -242,7 +330,7 @@
         "rh": 0,
         "inputs": 0,
         "x": 210,
-        "y": 530,
+        "y": 450,
         "wires": [
             [
                 "a002a032246518ea",
@@ -251,121 +339,11 @@
         ]
     },
     {
-        "id": "dc29b5681134edb7",
-        "type": "mqtt-broker",
-        "name": "SmartMirror",
-        "broker": "broker.emqx.io",
-        "port": 1883,
-        "clientid": "",
-        "autoConnect": true,
-        "usetls": false,
-        "protocolVersion": 4,
-        "keepalive": 60,
-        "cleansession": true,
-        "autoUnsubscribe": true,
-        "birthTopic": "",
-        "birthQos": "0",
-        "birthRetain": "false",
-        "birthPayload": "",
-        "birthMsg": {},
-        "closeTopic": "",
-        "closeQos": "0",
-        "closeRetain": "false",
-        "closePayload": "",
-        "closeMsg": {},
-        "willTopic": "",
-        "willQos": "0",
-        "willRetain": "false",
-        "willPayload": "",
-        "willMsg": {},
-        "userProps": "",
-        "sessionExpiry": ""
-    },
-    {
-        "id": "3796b772c7196a4c",
-        "type": "ui-page",
-        "name": "Điều khiển",
-        "ui": "0988a90484e1800b",
-        "path": "/guong-thong-minh",
-        "icon": "home",
-        "layout": "grid",
-        "theme": "ce73f4caa30ee6a1",
-        "breakpoints": [
-            {
-                "name": "Mobile",
-                "px": "0",
-                "cols": "3"
-            },
-            {
-                "name": "Tablet",
-                "px": "576",
-                "cols": "6"
-            },
-            {
-                "name": "Desktop",
-                "px": "1024",
-                "cols": "12"
-            }
-        ],
-        "tabs": [],
-        "order": 2,
-        "className": "",
-        "visible": true,
-        "disabled": false
-    },
-    {
-        "id": "0988a90484e1800b",
-        "type": "ui-base",
-        "name": "SmartMirror",
-        "path": "/dashboard",
-        "appIcon": "",
-        "includeClientData": true,
-        "acceptsClientConfig": [
-            "ui-notification",
-            "ui-control"
-        ],
-        "showPathInSidebar": false,
-        "headerContent": "page",
-        "navigationStyle": "default",
-        "titleBarStyle": "default",
-        "showReconnectNotification": true,
-        "notificationDisplayTime": 1,
-        "showDisconnectNotification": true,
-        "allowInstall": false
-    },
-    {
-        "id": "ce73f4caa30ee6a1",
-        "type": "ui-theme",
-        "name": "Smart Mirror Theme",
-        "colors": {
-            "surface": "#10191e",
-            "primary": "#83d9c3",
-            "bgPage": "#081014",
-            "groupBg": "#10191e",
-            "groupOutline": "#24363d"
-        },
-        "sizes": {
-            "density": "default",
-            "pagePadding": "12px",
-            "groupGap": "12px",
-            "groupBorderRadius": "4px",
-            "widgetGap": "12px"
-        }
-    },
-    {
-        "id": "894ab83c0f59fd0f",
-        "type": "global-config",
-        "env": [],
-        "modules": {
-            "@flowfuse/node-red-dashboard": "1.34.0"
-        }
-    },
-    {
         "id": "page-event-dedup",
         "type": "function",
         "z": "sm-tab-mqtt",
-        "name": "NEXT · loại bản tin trùng",
-        "func": "let event = msg.payload;\nif (Buffer.isBuffer(event)) event = event.toString();\nif (typeof event === 'string') {\n    try { event = JSON.parse(event); } catch (_) { return null; }\n}\nif (!event || event.event !== 'NEXT' ||\n    typeof event.bootId !== 'string' || !/^[a-f0-9]{16}$/.test(event.bootId) ||\n    !Number.isSafeInteger(event.sequence) || event.sequence < 1 ||\n    event.sequence > 4294967295 || msg.retain === true) return null;\nconst seen = context.get('pageSequences') || {};\nconst previous = seen[event.bootId];\nif (previous !== undefined && event.sequence <= previous) return null;\nseen[event.bootId] = event.sequence;\nconst keys = Object.keys(seen);\nif (keys.length > 32) delete seen[keys[0]];\ncontext.set('pageSequences', seen);\nmsg.pageEvent = event;\nmsg.payload = 'NEXT';\nreturn msg;",
+        "name": "Vuốt · loại bản tin trùng",
+        "func": "let event = msg.payload;\nif (Buffer.isBuffer(event)) event = event.toString();\nif (typeof event === 'string') {\n    try { event = JSON.parse(event); } catch (_) { return null; }\n}\nif (!event || !['NEXT','PREV'].includes(event.event) ||\n    typeof event.bootId !== 'string' || !/^[a-f0-9]{16}$/.test(event.bootId) ||\n    !Number.isSafeInteger(event.sequence) || event.sequence < 1 ||\n    event.sequence > 4294967295 || msg.retain === true) return null;\nconst seen = context.get('pageSequences') || {};\nconst previous = seen[event.bootId];\nif (previous !== undefined && event.sequence <= previous) return null;\nseen[event.bootId] = event.sequence;\nconst keys = Object.keys(seen);\nif (keys.length > 32) delete seen[keys[0]];\ncontext.set('pageSequences', seen);\nmsg.pageEvent = event;\nmsg.payload = event.event;\nreturn msg;",
         "outputs": 1,
         "timeout": 0,
         "noerr": 0,
@@ -448,12 +426,12 @@
         "group": "sm-admin-group",
         "page": "",
         "ui": "",
-        "name": "Điều khiển · di động",
+        "name": "Lịch · ứng dụng di động",
         "order": 1,
         "width": 0,
         "height": 0,
-        "head": "",
-        "format": "<template>\n  <main class=\"sm\" :class=\"{ 'sm-mirror': mirror, 'sm-sleep': mirror && !s.active }\">\n    <template v-if=\"!mirror || s.active\">\n      <header class=\"sm-header\">\n        <div><span class=\"sm-eyebrow\">SMART MIRROR / {{ mirror ? 'GƯƠNG' : 'ĐIỀU KHIỂN' }}</span><h1>{{ mirror ? pages[s.page || 0] : 'Không gian của bạn' }}</h1></div>\n        <span class=\"sm-status\" :class=\"{ok:connected && s.online}\">{{ !connected ? 'Mất kết nối Dashboard' : s.online ? 'ESP32 trực tuyến' : 'Chờ ESP32 / dữ liệu mới' }}</span>\n      </header>\n      <div v-if=\"!connected || !s.online\" class=\"sm-notice\">{{ !connected ? 'Đang kết nối lại Node-RED. Dữ liệu có thể đã cũ.' : 'Dữ liệu phòng chưa sẵn sàng. Điều khiển tạm khóa.' }}</div>\n      <div v-if=\"s.error && !mirror\" class=\"sm-notice\">{{ s.error }}</div>\n      <div v-for=\"r in s.reminders || []\" :key=\"r.id\" class=\"sm-notice\">Sắp đến giờ · {{ r.title }} — {{ date(r.at) }}</div>\n      <div v-for=\"a in s.alerts || []\" :key=\"a\" class=\"sm-notice\">{{ a }}</div>\n\n      <section v-if=\"!mirror || s.page === 0\" class=\"sm-overview\">\n        <div class=\"sm-clock\"><div>{{ time }}</div><p>{{ today }}</p><small>Giờ Việt Nam · UTC+7</small></div>\n        <div class=\"sm-metrics\">\n          <article><span>Nhiệt độ phòng</span><strong>{{ reading('temperature') }}<small> °C</small></strong><small>{{ freshness('temperature') }}</small></article>\n          <article><span>Độ ẩm phòng</span><strong>{{ reading('humidity') }}<small> %</small></strong><small>{{ freshness('humidity') }}</small></article>\n          <article><span>Quạt · {{ s.device?.mode || '--' }}</span><strong>{{ connected && s.online ? (s.device?.fan === 'ON' ? 'Bật' : s.device?.fan === 'OFF' ? 'Tắt' : '--') : '--' }}</strong><small>AUTO: bật ≥32°C · tắt ≤30°C</small></article>\n          <article><span>Đèn gương</span><strong>{{ connected && s.online && s.device?.light != null ? Math.round(s.device.light / 255 * 100) + '%' : '--' }}</strong><small>{{ s.active ? 'Gương đang hoạt động' : 'Gương đang ngủ' }}</small></article>\n        </div>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 1\" class=\"sm-panel\">\n        <div class=\"sm-section-title\"><h2>Thời tiết bên ngoài</h2><button v-if=\"!mirror\" @click=\"act('refreshWeather')\" :disabled=\"!s.location\">Cập nhật</button></div>\n        <p>{{ s.location?.name || 'Chọn vị trí ở phần cài đặt bên dưới' }}</p>\n        <template v-if=\"s.weather\">\n          <div class=\"sm-weather\"><strong>{{ s.weather.current.temperature_2m }}°</strong><div>{{ weatherName(s.weather.current.weather_code) }}<p>Độ ẩm {{ s.weather.current.relative_humidity_2m }}% · Gió {{ s.weather.current.wind_speed_10m }} km/h</p></div></div>\n          <div class=\"sm-forecast\"><article v-for=\"(day,i) in s.weather.daily.time\" :key=\"day\"><b>{{ day }}</b><span>{{ weatherName(s.weather.daily.weather_code[i]) }}</span><strong>{{ s.weather.daily.temperature_2m_min[i] }}° – {{ s.weather.daily.temperature_2m_max[i] }}°</strong><small>Mưa {{ s.weather.daily.precipitation_probability_max[i] }}%</small></article></div>\n          <small>{{ s.weatherStale ? 'Dữ liệu thời tiết cũ · ' : '' }}Cập nhật {{ date(s.weather.at) }}</small>\n        </template>\n        <p v-else>Chưa có dữ liệu thời tiết.</p><p v-if=\"s.weatherError\" class=\"sm-notice\">{{ s.weatherError }}</p>\n        <small>Nguồn: <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener\">Open-Meteo</a> · Số liệu ngoài trời khác cảm biến trong phòng.</small>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 2\" class=\"sm-panel\">\n        <h2>Lịch & nhắc việc</h2><p>Nhắc trên gương trước 15 phút · Giờ Việt Nam</p>\n        <p v-if=\"!visibleTasks.length\">Chưa có lịch sắp tới. Thêm việc ở trang Điều khiển.</p>\n        <div v-for=\"t in visibleTasks\" :key=\"t.id\" class=\"sm-task\" :class=\"{done:t.done}\"><div><b>{{ t.title }}</b><small>{{ date(t.at) }}{{ !t.done && t.at < clock ? ' · Đã quá giờ' : '' }}</small></div><div v-if=\"!mirror\"><button @click=\"act('toggleTask',{id:t.id})\">{{ t.done ? 'Mở lại' : 'Xong' }}</button><button @click=\"act('deleteTask',{id:t.id})\">Xóa</button></div></div>\n        <form v-if=\"!mirror\" class=\"sm-form\" @submit.prevent=\"addTask\"><label>Tên công việc<input v-model=\"taskTitle\" maxlength=\"120\" required placeholder=\"Ví dụ: Họp nhóm đồ án\"></label><label>Thời gian (giờ Việt Nam)<input v-model=\"taskAt\" type=\"datetime-local\" required></label><button type=\"submit\">Thêm nhắc việc</button></form>\n        <small>Danh sách nhập trực tiếp; chưa đồng bộ Google Calendar. Không có thông báo khi trình duyệt đóng.</small>\n      </section>\n\n      <template v-if=\"!mirror\">\n        <section class=\"sm-panel\"><h2>Điều khiển thiết bị</h2><p>Trạng thái được xác nhận từ ESP32; đèn chỉ điều chỉnh khi gương ACTIVE.</p>\n          <div class=\"sm-controls\"><label>Chế độ quạt<select :value=\"s.device?.mode || ''\" :disabled=\"!canControl\" @change=\"control('mode',$event.target.value)\"><option disabled value=\"\">Chưa xác nhận</option><option>AUTO</option><option>MANUAL</option></select></label>\n          <button :disabled=\"!canControl || s.device?.mode !== 'MANUAL' || !!s.pending?.fan\" @click=\"control('fan',s.device?.fan === 'ON' ? 'OFF' : 'ON')\">{{ s.device?.fan === 'ON' ? 'Tắt quạt' : 'Bật quạt' }}</button>\n          <label>Độ sáng mong muốn: {{ brightness }}/255<input v-model.number=\"brightness\" type=\"range\" min=\"0\" max=\"255\" :disabled=\"!canControl || !s.active\" @change=\"control('light',Number(brightness))\"></label></div>\n          <p v-if=\"Object.keys(s.pending || {}).length\">Đang chờ ESP32 xác nhận…</p>\n          <button :disabled=\"!canControl || !s.active\" @click=\"act('next')\">Trang tiếp theo trên gương →</button><small>Trang hiện tại: {{ pages[s.page || 0] }} · <a href=\"./guong\">Mở màn hình gương</a></small>\n        </section>\n        <section class=\"sm-panel\"><h2>Vị trí thời tiết</h2><p>Vị trí dùng chung cho gương. Tọa độ được lưu tại Node-RED và gửi tới Open-Meteo khi lấy thời tiết.</p>\n          <form class=\"sm-form\" @submit.prevent=\"act('search',{query:query})\"><label>Tỉnh / thành phố<input v-model=\"query\" minlength=\"2\" maxlength=\"80\" required placeholder=\"Đà Nẵng, Hà Nội…\"></label><button type=\"submit\">Tìm địa điểm</button><button type=\"button\" @click=\"locate\">Dùng vị trí của tôi</button></form>\n          <p v-if=\"localError\" class=\"sm-notice\">{{ localError }}</p><div class=\"sm-places\"><button v-for=\"p in s.places || []\" :key=\"p.lat + ',' + p.lon\" @click=\"act('location',p)\">{{ p.name }}</button></div>\n          <small v-if=\"s.location\">Đang dùng: {{ s.location.name }} · {{ s.location.lat }}, {{ s.location.lon }}</small><button v-if=\"s.location\" @click=\"act('clearLocation')\">Xóa vị trí đã lưu</button>\n        </section>\n        <section class=\"sm-panel\"><div class=\"sm-section-title\"><h2>Lịch sử nhiệt độ · 24 giờ</h2><button @click=\"exportHistory\" :disabled=\"!s.history?.length\">Xuất CSV</button></div><p>Mỗi phút một mẫu hợp lệ; khoảng trống thể hiện thời gian thiếu dữ liệu.</p>\n          <svg v-if=\"s.history?.length\" class=\"sm-chart\" viewBox=\"0 0 800 160\" role=\"img\" aria-label=\"Biểu đồ nhiệt độ 24 giờ\"><text x=\"4\" y=\"16\" fill=\"currentColor\">{{ chartMax }}°C</text><text x=\"4\" y=\"150\" fill=\"currentColor\">{{ chartMin }}°C</text><polyline v-for=\"(line,i) in chartLines\" :key=\"i\" :points=\"line\" fill=\"none\" stroke=\"#64d9bd\" stroke-width=\"2\"/><circle v-for=\"(h,i) in s.history\" :key=\"i\" :cx=\"chartX(h.at)\" :cy=\"chartY(h.temperature)\" r=\"2\" fill=\"#64d9bd\"/></svg><p v-else>Chưa có mẫu hợp lệ. Bật Wokwi và chờ dữ liệu.</p><small>Lịch sử phiên chạy hiện tại · nhiệt độ / độ ẩm có trong CSV.</small>\n        </section>\n      </template>\n      <footer><span>{{ mirror ? 'Nhấn nút trên gương để chuyển trang' : 'ESP32 → MQTT → Node-RED' }}</span><span v-if=\"mirror\">{{ (s.page || 0) + 1 }} / 3</span></footer>\n    </template>\n    <span v-else class=\"sm-sleep-label\">{{ connected ? 'Gương đang ngủ · Đến gần để bật' : 'Mất kết nối Node-RED' }}</span>\n  </main>\n</template>\n<script>\nexport default {\n  data() { return { mirror: false, s:{}, clock:Date.now(), connected:true, timer:null, query:'', taskTitle:'', taskAt:'', brightness:180, localError:'', pages:['Tổng quan','Thời tiết','Lịch & nhắc việc'] } },\n  computed: {\n    time() { return new Date(this.clock).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}) },\n    today() { return new Date(this.clock).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long',year:'numeric'}) },\n    canControl() { return this.connected && this.s.online },\n    visibleTasks() { return (this.s.tasks || []).filter(t => !this.mirror || (!t.done && t.at >= this.clock - 86400000)).slice(0,this.mirror ? 8 : 100) },\n    chartMin() { return Math.floor(Math.min(...(this.s.history || []).map(h=>h.temperature),25)-1) },\n    chartMax() { return Math.ceil(Math.max(...(this.s.history || []).map(h=>h.temperature),30)+1) },\n    chartLines() { const groups=[[]]; for(const h of this.s.history || []) { let g=groups[groups.length-1]; if(g.length && h.at-g[g.length-1].at>90000) { groups.push([]); g=groups[groups.length-1] } g.push(h) } return groups.map(g=>g.map(h=>this.chartX(h.at)+','+this.chartY(h.temperature)).join(' ')) }\n  },\n  watch: { msg: { immediate:true, handler(m) { if(m?.payload?.readings) { this.s=m.payload; if(!m.payload.pending?.light && m.payload.device?.light != null) this.brightness=m.payload.device.light } } } },\n  mounted() { this.timer=setInterval(()=>{this.clock=Date.now();this.connected=this.$socket.connected},1000); this.send({topic:'ui',payload:{action:'load'}}) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n    act(action,extra={}) { this.send({topic:'ui',payload:{action,...extra}}) },\n    control(key,value) { this.act('control',{key,value}) },\n    reading(k) { return this.connected && this.s.fresh?.[k] && this.clock-(this.s.readings[k]?.at || 0)<15000 ? this.s.readings[k].value.toFixed(1) : '--' },\n    freshness(k) { const r=this.s.readings?.[k]; return !r ? 'Chưa có số đo' : 'Đo lúc '+this.date(r.at) },\n    date(at) { return new Date(at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) },\n    weatherName(code) { if(code===0)return 'Trời quang';if(code<=3)return 'Có mây';if(code<=48)return 'Sương mù';if(code<=57)return 'Mưa phùn';if(code<=67)return 'Mưa';if(code<=77)return 'Tuyết';if(code<=86)return 'Mưa rào';return 'Dông' },\n    addTask() { this.act('addTask',{title:this.taskTitle,at:this.taskAt+':00+07:00'}); this.taskTitle=''; this.taskAt='' },\n    locate() { this.localError=''; if(!window.isSecureContext || !navigator.geolocation) {this.localError='Định vị cần HTTPS hoặc localhost. Bạn có thể tìm tên tỉnh/thành ở ô bên cạnh.';return} navigator.geolocation.getCurrentPosition(p=>this.act('location',{lat:p.coords.latitude,lon:p.coords.longitude,name:'Vị trí của tôi'}),e=>{this.localError=e.code===1?'Bạn chưa cho phép định vị. Hãy cho phép trong trình duyệt hoặc tìm địa điểm.':'Không lấy được vị trí. Thử lại hoặc tìm tên địa điểm.'},{timeout:15000,maximumAge:300000}) },\n    chartX(at) { return 50+((at-(this.s.now-86400000))/86400000)*740 },\n    chartY(t) { return 145-(t-this.chartMin)/(this.chartMax-this.chartMin)*125 },\n    exportHistory() { const rows=['time,temperature_c,humidity_pct',...(this.s.history || []).map(h=>new Date(h.at).toISOString()+','+h.temperature+','+h.humidity)];const url=URL.createObjectURL(new Blob([rows.join('\\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='smartmirror-history.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000) }\n  }\n}\n</script>\n<style>\nbody:has(.sm-mirror) .v-app-bar,body:has(.sm-mirror) .v-navigation-drawer{display:none!important}body:has(.sm-mirror) .v-main{--v-layout-top:0px!important;--v-layout-left:0px!important;background:#000!important}body:has(.sm-mirror) .nrdb-ui-group{background:#000!important;border:0!important}\n.sm{background:#10191e;color:#ecf4f3;padding:clamp(18px,4vw,48px);border-radius:18px;font-family:system-ui,sans-serif;line-height:1.6}.sm *{box-sizing:border-box}.sm h1{font-size:clamp(25px,4vw,40px);font-weight:500;margin:4px 0}.sm h2{font-size:22px;font-weight:500;margin:0 0 10px}.sm p{color:#afc3c7;margin:8px 0 16px}.sm small{display:block;color:#9eb4ba;font-size:12px}.sm a{color:#83d9c3}.sm-header,.sm-section-title,.sm-task,.sm footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sm-eyebrow{font-size:11px;letter-spacing:3px;color:#8bc4ba}.sm-status{font-size:12px;padding:7px 12px;border:1px solid #6c5940;border-radius:24px;color:#edc48d}.sm-status.ok{color:#8edec0;border-color:#376c59}.sm-overview{display:grid;grid-template-columns:1fr 1.5fr;gap:28px;margin:35px 0}.sm-clock>div{font-size:clamp(55px,9vw,105px);line-height:1.2;font-weight:300;letter-spacing:-4px;font-variant-numeric:tabular-nums}.sm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sm-metrics article,.sm-forecast article{padding:18px;background:#18262d;border:1px solid #2c3d43;border-radius:12px}.sm-metrics span{font-size:13px;color:#b7cacc}.sm-metrics strong{display:block;font-size:30px;font-weight:500}.sm-metrics strong small{display:inline;font-size:16px}.sm-panel{border-top:1px solid #304147;padding:28px 0}.sm-weather{display:flex;align-items:center;gap:24px;margin:20px 0}.sm-weather>strong{font-size:68px;font-weight:300}.sm-forecast{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.sm-forecast span,.sm-forecast strong{display:block}.sm button,.sm input,.sm select{font:inherit;border:1px solid #425b62;border-radius:8px;padding:10px 14px;color:#edf6f4;background:#1d333a}.sm button{cursor:pointer;min-height:44px}.sm button:hover{background:#2b4a51}.sm button:disabled,.sm input:disabled,.sm select:disabled{opacity:.45;cursor:not-allowed}.sm input,.sm select{width:100%;margin-top:6px}.sm input[type=range]{padding:0;accent-color:#83d9c3;min-height:35px}.sm label{display:block;font-size:13px;color:#bfd1d3}.sm-form,.sm-controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:20px 0}.sm-form label,.sm-controls label{flex:1;min-width:200px}.sm-notice{border-left:3px solid #e2b977;background:#302c24;padding:10px 16px;margin:12px 0;color:#f2d6ac}.sm-task{border-bottom:1px solid #304147;padding:14px 0}.sm-task.done b{text-decoration:line-through;color:#94aaa9}.sm-task button{margin-left:6px}.sm-places{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.sm-chart{width:100%;height:auto;max-height:230px;margin:20px 0}.sm footer{border-top:1px solid #304147;padding-top:20px;margin-top:25px;font-size:12px;color:#829ca3}.sm-mirror{background:#000;min-height:85vh;border-radius:0}.sm-sleep{display:flex;align-items:end;justify-content:center}.sm-sleep-label{color:#444;font-size:12px}.sm-mirror .sm-metrics article,.sm-mirror .sm-forecast article{background:#000;border-color:#333}.sm-mirror .sm-notice{background:#15120d}.sm-mirror .sm-header{margin-bottom:35px}@media(max-width:700px){.sm-overview{grid-template-columns:1fr}.sm-forecast{grid-template-columns:1fr}.sm-form>*{width:100%}.sm{padding:18px}.sm-task{align-items:start}.sm-header{align-items:start}.sm-mirror{min-height:90vh}.sm-metrics article{padding:13px}}\n</style>\n",
+        "head": "<link rel=\"manifest\" href=\"/mobile/manifest.webmanifest\"><meta name=\"theme-color\" content=\"#10201f\"><meta name=\"mobile-web-app-capable\" content=\"yes\">",
+        "format": "<template>\n  <main class=\"sm\" :class=\"{ 'sm-mirror': mirror, 'sm-sleep': mirror && !mirrorAwake }\">\n    <template v-if=\"!mirror || mirrorAwake\">\n      <header class=\"sm-header\">\n        <div><span class=\"sm-eyebrow\">SMART MIRROR / {{ mirror ? 'GƯƠNG' : 'LỊCH CỦA TÔI' }}</span><h1>{{ mirror ? pages[s.page || 0] : 'Lịch hoạt động' }}</h1></div>\n        <span class=\"sm-status\" :class=\"{ok:connected && s.online}\">{{ !connected ? 'Mất kết nối Dashboard' : s.online ? 'ESP32 trực tuyến' : 'Chờ ESP32 / dữ liệu mới' }}</span>\n      </header>\n      <div v-if=\"!connected || !s.online\" class=\"sm-notice\">{{ !connected ? 'Đang kết nối lại Node-RED. Dữ liệu có thể đã cũ.' : 'Chưa xác nhận kết nối với ESP32. Điều khiển tạm khóa.' }}</div>\n      <div v-if=\"s.error && !mirror\" class=\"sm-notice\">{{ s.error }}</div>\n      <div v-for=\"r in s.reminders || []\" :key=\"r.id\" class=\"sm-notice\">Sắp đến giờ · {{ r.title }} — {{ date(r.at) }}</div>\n      <div v-for=\"a in s.alerts || []\" :key=\"a\" class=\"sm-notice\">{{ a }}</div>\n      <section v-if=\"mirror && s.active\" class=\"sm-wake-agenda\"><span class=\"sm-eyebrow\">HÔM NAY · {{ today }}</span><h2>Lịch trong ngày</h2><p v-if=\"!todayTasks.length\">Hôm nay chưa có hoạt động nào được lên lịch.</p><div v-for=\"t in todayTasks\" :key=\"t.id\" class=\"sm-wake-event\"><b>{{ timeOnly(t.at) }}</b><span>{{ t.title }}</span></div></section>\n\n      <section v-if=\"!mirror || s.page === 0\" class=\"sm-overview\">\n        <div class=\"sm-clock\"><div>{{ time }}</div><p>{{ today }}</p><small>Giờ Việt Nam · UTC+7</small></div>\n        <div class=\"sm-metrics\">\n          <article><span>Nhiệt độ phòng</span><strong>{{ reading('temperature') }}<small> °C</small></strong><small>{{ freshness('temperature') }}</small></article>\n          <article><span>Độ ẩm phòng</span><strong>{{ reading('humidity') }}<small> %</small></strong><small>{{ freshness('humidity') }}</small></article>\n          <article><span>Đèn gương tự động</span><strong>{{ connected && s.online ? (s.device?.lamp === 'ON' ? 'Đang sáng' : s.device?.lamp === 'OFF' ? 'Đang tắt' : '--') : '--' }}</strong><small>Tự bật khi có người và phòng tối</small></article>\n          <article><span>Độ sáng màn hình</span><strong>{{ connected && s.online && s.device?.light != null ? Math.round(s.device.light / 255 * 100) + '%' : '--' }}</strong><small>{{ s.device?.lightSensor === 'FALLBACK' ? 'Cảm biến lỗi · dùng mức dự phòng' : 'Tự cân theo ánh sáng phòng · đèn gương cũng tự động' }}</small></article>\n        </div>\n      </section>\n\n      <section v-if=\"!mirror\" class=\"sm-panel sm-calendar\">\n        <div class=\"sm-section-title\"><div><span class=\"sm-eyebrow\">SẮP XẾP NGÀY CỦA BẠN</span><h2>{{ monthLabel }}</h2></div><div class=\"sm-month-nav\"><button aria-label=\"Tháng trước\" @click=\"shiftMonth(-1)\">‹</button><button @click=\"goToday\">Hôm nay</button><button aria-label=\"Tháng sau\" @click=\"shiftMonth(1)\">›</button></div></div>\n        <div class=\"sm-calendar-layout\"><div class=\"sm-calendar-grid\"><div v-for=\"d in weekdays\" :key=\"d\" class=\"sm-weekday\">{{ d }}</div><button v-for=\"cell in calendarCells\" :key=\"cell.key\" class=\"sm-day\" :class=\"{outside:cell.outside,selected:cell.key===selectedDay,today:cell.today}\" @click=\"selectedDay=cell.key\"><span>{{ cell.day }}</span><i v-if=\"cell.count\" class=\"sm-day-dot\">{{ cell.count > 9 ? '9+' : cell.count }}</i></button></div>\n          <aside class=\"sm-agenda\"><div class=\"sm-agenda-heading\"><div><span class=\"sm-eyebrow\">HOẠT ĐỘNG TRONG NGÀY</span><h3>{{ selectedDateLabel }}</h3></div><button class=\"sm-primary\" @click=\"newTask\">＋ Thêm</button></div><p v-if=\"!selectedTasks.length\" class=\"sm-empty\">Ngày này chưa có hoạt động. Thêm lịch hẹn, việc cần làm hoặc sự kiện.</p><article v-for=\"t in selectedTasks\" :key=\"t.id\" class=\"sm-calendar-event\" :class=\"{done:t.done}\"><time>{{ timeOnly(t.at) }}</time><div class=\"sm-event-info\"><b>{{ t.title }}</b><small>{{ t.done ? 'Đã hoàn thành' : 'Đã lên lịch' }}</small></div><button :aria-label=\"t.done ? 'Mở lại hoạt động' : 'Đánh dấu hoàn thành'\" @click=\"act('toggleTask',{id:t.id})\">✓</button><button aria-label=\"Sửa hoạt động\" @click=\"editTask(t)\">✎</button><button aria-label=\"Xóa hoạt động\" @click=\"act('deleteTask',{id:t.id})\">×</button></article></aside></div>\n        <div v-if=\"editorOpen\" class=\"sm-modal-backdrop\" @click.self=\"editorOpen=false\"><form class=\"sm-modal\" @submit.prevent=\"saveTask\"><div class=\"sm-section-title\"><h3>{{ editorId ? 'Sửa hoạt động' : 'Hoạt động mới' }}</h3><button type=\"button\" aria-label=\"Đóng\" @click=\"editorOpen=false\">×</button></div><label>Tên hoạt động<input v-model=\"taskTitle\" maxlength=\"120\" required autofocus placeholder=\"Ví dụ: Họp nhóm, tập thể dục…\"></label><label>Ngày và giờ<input v-model=\"taskAt\" type=\"datetime-local\" required></label><div class=\"sm-modal-actions\"><button type=\"button\" @click=\"editorOpen=false\">Hủy</button><button class=\"sm-primary\" type=\"submit\">Lưu hoạt động</button></div></form></div>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 1\" class=\"sm-panel\">\n        <div class=\"sm-section-title\"><h2>Thời tiết bên ngoài</h2><button v-if=\"!mirror\" @click=\"act('refreshWeather')\" :disabled=\"!s.location\">Cập nhật</button></div>\n        <p>{{ s.location?.name || 'Chọn vị trí ở phần cài đặt bên dưới' }}</p>\n        <template v-if=\"s.weather\">\n          <div class=\"sm-weather\"><strong>{{ s.weather.current.temperature_2m }}°</strong><div>{{ weatherName(s.weather.current.weather_code) }}<p>Độ ẩm {{ s.weather.current.relative_humidity_2m }}% · Gió {{ s.weather.current.wind_speed_10m }} km/h</p></div></div>\n          <div class=\"sm-forecast\"><article v-for=\"(day,i) in s.weather.daily.time\" :key=\"day\"><b>{{ day }}</b><span>{{ weatherName(s.weather.daily.weather_code[i]) }}</span><strong>{{ s.weather.daily.temperature_2m_min[i] }}° – {{ s.weather.daily.temperature_2m_max[i] }}°</strong><small>Mưa {{ s.weather.daily.precipitation_probability_max[i] }}%</small></article></div>\n          <small>{{ s.weatherStale ? 'Dữ liệu thời tiết cũ · ' : '' }}Cập nhật {{ date(s.weather.at) }}</small>\n        </template>\n        <p v-else>Chưa có dữ liệu thời tiết.</p><p v-if=\"s.weatherError\" class=\"sm-notice\">{{ s.weatherError }}</p>\n        <small>Nguồn: <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener\">Open-Meteo</a> · Số liệu ngoài trời khác cảm biến trong phòng.</small>\n      </section>\n\n      <section v-if=\"mirror && s.page === 2\" class=\"sm-panel\"><h2>Lịch hoạt động hôm nay</h2><p>{{ today }}</p><p v-if=\"!todayTasks.length\">Hôm nay chưa có hoạt động nào được lên lịch.</p><div v-for=\"t in todayTasks\" :key=\"t.id\" class=\"sm-task\"><b>{{ timeOnly(t.at) }} · {{ t.title }}</b></div></section>\n\n\n\n      <template v-if=\"!mirror\">\n        <section class=\"sm-panel\"><h2>Vị trí thời tiết</h2><p>Vị trí dùng chung cho gương. Tọa độ được lưu tại Node-RED và gửi tới Open-Meteo khi lấy thời tiết.</p>\n          <form class=\"sm-form\" @submit.prevent=\"act('search',{query:query})\"><label>Tỉnh / thành phố<input v-model=\"query\" minlength=\"2\" maxlength=\"80\" required placeholder=\"Đà Nẵng, Hà Nội…\"></label><button type=\"submit\">Tìm địa điểm</button><button type=\"button\" @click=\"locate\">Dùng vị trí của tôi</button></form>\n          <p v-if=\"localError\" class=\"sm-notice\">{{ localError }}</p><div class=\"sm-places\"><button v-for=\"p in s.places || []\" :key=\"p.lat + ',' + p.lon\" @click=\"act('location',p)\">{{ p.name }}</button></div>\n          <small v-if=\"s.location\">Đang dùng: {{ s.location.name }} · {{ s.location.lat }}, {{ s.location.lon }}</small><button v-if=\"s.location\" @click=\"act('clearLocation')\">Xóa vị trí đã lưu</button>\n        </section>\n        <section class=\"sm-panel\"><div class=\"sm-section-title\"><h2>Lịch sử nhiệt độ · 24 giờ</h2><button @click=\"exportHistory\" :disabled=\"!s.history?.length\">Xuất CSV</button></div><p>Mỗi phút một mẫu hợp lệ; khoảng trống thể hiện thời gian thiếu dữ liệu.</p>\n          <svg v-if=\"s.history?.length\" class=\"sm-chart\" viewBox=\"0 0 800 160\" role=\"img\" aria-label=\"Biểu đồ nhiệt độ 24 giờ\"><text x=\"4\" y=\"16\" fill=\"currentColor\">{{ chartMax }}°C</text><text x=\"4\" y=\"150\" fill=\"currentColor\">{{ chartMin }}°C</text><polyline v-for=\"(line,i) in chartLines\" :key=\"i\" :points=\"line\" fill=\"none\" stroke=\"#64d9bd\" stroke-width=\"2\"/><circle v-for=\"(h,i) in s.history\" :key=\"i\" :cx=\"chartX(h.at)\" :cy=\"chartY(h.temperature)\" r=\"2\" fill=\"#64d9bd\"/></svg><p v-else>Chưa có mẫu hợp lệ. Bật Wokwi và chờ dữ liệu.</p><small>Lịch sử phiên chạy hiện tại · nhiệt độ / độ ẩm có trong CSV.</small>\n        </section>\n      </template>\n      <footer><span>{{ mirror ? 'Vuốt trái / phải trên màn hình để chuyển trang' : 'Ứng dụng lịch · Đồng bộ với gương thông minh' }}</span><span v-if=\"mirror\">{{ (s.page || 0) + 1 }} / 3</span></footer>\n    </template>\n    <span v-else class=\"sm-sleep-label\">{{ !connected ? 'Mất kết nối Node-RED' : !s.online ? 'Chờ kết nối ESP32' : 'Gương đang ngủ · Đến gần để bật' }}</span>\n  </main>\n</template>\n<script>\nexport default {\n  data() { const day=new Date(Date.now()+7*3600000).toISOString().slice(0,10); return { mirror: false, s:{}, clock:Date.now(), connected:true, timer:null, query:'', taskTitle:'', taskAt:'', editorId:null, editorOpen:false, calendarCursor:day, selectedDay:day, localError:'', weekdays:['T2','T3','T4','T5','T6','T7','CN'], pages:['Tổng quan','Thời tiết','Lịch hôm nay'] } },\n  computed: {\n    time() { return new Date(this.clock).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}) },\n    today() { return new Date(this.clock).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long',year:'numeric'}) },\n    canControl() { return this.connected && this.s.online },\n    mirrorAwake() { return this.canControl && this.s.active },\n    todayKey() { return new Date(this.clock+7*3600000).toISOString().slice(0,10) },\n    todayTasks() { return (this.s.tasks || []).filter(t => this.dayKey(t.at)===this.todayKey).slice(0,8) },\n    selectedTasks() { return (this.s.tasks || []).filter(t => this.dayKey(t.at)===this.selectedDay) },\n    monthLabel() { const [y,m]=this.calendarCursor.split('-').map(Number);return new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,1))) },\n    selectedDateLabel() { const [y,m,d]=this.selectedDay.split('-').map(Number);return new Intl.DateTimeFormat('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,d))) },\n    calendarCells() { const [y,m]=this.calendarCursor.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),offset=(first.getUTCDay()+6)%7,start=Date.UTC(y,m-1,1-offset);return Array.from({length:42},(_,i)=>{const d=new Date(start+i*86400000),key=d.toISOString().slice(0,10);return {key,day:d.getUTCDate(),outside:d.getUTCMonth()!==m-1,today:key===this.todayKey,count:(this.s.tasks||[]).filter(t=>this.dayKey(t.at)===key).length}}) },\n    chartMin() { return Math.floor(Math.min(...(this.s.history || []).map(h=>h.temperature),25)-1) },\n    chartMax() { return Math.ceil(Math.max(...(this.s.history || []).map(h=>h.temperature),30)+1) },\n    chartLines() { const groups=[[]]; for(const h of this.s.history || []) { let g=groups[groups.length-1]; if(g.length && h.at-g[g.length-1].at>90000) { groups.push([]); g=groups[groups.length-1] } g.push(h) } return groups.map(g=>g.map(h=>this.chartX(h.at)+','+this.chartY(h.temperature)).join(' ')) }\n  },\n  watch: { msg: { immediate:true, handler(m) { const next=m?.payload;if(next?.readings)this.s=next } } },\n  mounted() { this.timer=setInterval(()=>{this.clock=Date.now();this.connected=this.$socket.connected},1000); this.send({topic:'ui',payload:{action:'load'}}) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n    act(action,extra={}) { this.send({topic:'ui',payload:{action,...extra}}) },\n    reading(k) { return this.connected && this.s.fresh?.[k] && this.clock-(this.s.readings[k]?.at || 0)<15000 ? this.s.readings[k].value.toFixed(1) : '--' },\n    freshness(k) { const r=this.s.readings?.[k]; return !r ? 'Chưa có số đo' : 'Đo lúc '+this.date(r.at) },\n    date(at) { return new Date(at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) },\n    weatherName(code) { if(code===0)return 'Trời quang';if(code<=3)return 'Có mây';if(code<=48)return 'Sương mù';if(code<=57)return 'Mưa phùn';if(code<=67)return 'Mưa';if(code<=77)return 'Tuyết';if(code<=86)return 'Mưa rào';return 'Dông' },\n    dayKey(at) { return new Date(at+7*3600000).toISOString().slice(0,10) },\n    timeOnly(at) { return new Date(at+7*3600000).toISOString().slice(11,16) },\n    shiftMonth(delta) { const [y,m]=this.calendarCursor.split('-').map(Number),d=new Date(Date.UTC(y,m-1+delta,1));this.calendarCursor=d.toISOString().slice(0,7)+'-01';this.selectedDay=this.calendarCursor },\n    goToday() { this.calendarCursor=this.todayKey;this.selectedDay=this.todayKey },\n    newTask() { this.editorId=null;this.taskTitle='';this.taskAt=this.selectedDay+'T09:00';this.editorOpen=true },\n    editTask(t) { this.editorId=t.id;this.taskTitle=t.title;this.taskAt=new Date(t.at+7*3600000).toISOString().slice(0,16);this.editorOpen=true },\n    saveTask() { this.act('saveTask',{id:this.editorId,title:this.taskTitle,at:this.taskAt+':00+07:00'});this.editorOpen=false;this.taskTitle='';this.taskAt='';this.editorId=null },\n    locate() { this.localError=''; if(!window.isSecureContext || !navigator.geolocation) {this.localError='Định vị cần HTTPS hoặc localhost. Bạn có thể tìm tên tỉnh/thành ở ô bên cạnh.';return} navigator.geolocation.getCurrentPosition(p=>this.act('location',{lat:p.coords.latitude,lon:p.coords.longitude,name:'Vị trí của tôi'}),e=>{this.localError=e.code===1?'Bạn chưa cho phép định vị. Hãy cho phép trong trình duyệt hoặc tìm địa điểm.':'Không lấy được vị trí. Thử lại hoặc tìm tên địa điểm.'},{timeout:15000,maximumAge:300000}) },\n    chartX(at) { return 50+((at-(this.s.now-86400000))/86400000)*740 },\n    chartY(t) { return 145-(t-this.chartMin)/(this.chartMax-this.chartMin)*125 },\n    exportHistory() { const rows=['time,temperature_c,humidity_pct',...(this.s.history || []).map(h=>new Date(h.at).toISOString()+','+h.temperature+','+h.humidity)];const url=URL.createObjectURL(new Blob([rows.join('\\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='smartmirror-history.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000) }\n  }\n}\n</script>\n<style>\nbody:has(.sm-mirror) .v-app-bar,body:has(.sm-mirror) .v-navigation-drawer,body:has(.sm-calendar) .v-app-bar,body:has(.sm-calendar) .v-navigation-drawer{display:none!important}body:has(.sm-mirror) .v-main{--v-layout-top:0px!important;--v-layout-left:0px!important;background:#000!important}body:has(.sm-calendar) .v-main{--v-layout-top:0px!important;background:#081014!important}body:has(.sm-mirror) .nrdb-ui-group{background:#000!important;border:0!important}\n.sm{background:#10191e;color:#ecf4f3;padding:clamp(18px,4vw,48px);border-radius:18px;font-family:system-ui,sans-serif;line-height:1.6}.sm *{box-sizing:border-box}.sm h1{font-size:clamp(25px,4vw,40px);font-weight:500;margin:4px 0}.sm h2{font-size:22px;font-weight:500;margin:0 0 10px}.sm p{color:#afc3c7;margin:8px 0 16px}.sm small{display:block;color:#9eb4ba;font-size:12px}.sm a{color:#83d9c3}.sm-header,.sm-section-title,.sm-task,.sm footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sm-eyebrow{font-size:11px;letter-spacing:3px;color:#8bc4ba}.sm-status{font-size:12px;padding:7px 12px;border:1px solid #6c5940;border-radius:24px;color:#edc48d}.sm-status.ok{color:#8edec0;border-color:#376c59}.sm-overview{display:grid;grid-template-columns:1fr 1.5fr;gap:28px;margin:35px 0}.sm-clock>div{font-size:clamp(55px,9vw,105px);line-height:1.2;font-weight:300;letter-spacing:-4px;font-variant-numeric:tabular-nums}.sm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sm-metrics article,.sm-forecast article{padding:18px;background:#18262d;border:1px solid #2c3d43;border-radius:12px}.sm-metrics span{font-size:13px;color:#b7cacc}.sm-metrics strong{display:block;font-size:30px;font-weight:500}.sm-metrics strong small{display:inline;font-size:16px}.sm-panel{border-top:1px solid #304147;padding:28px 0}.sm-weather{display:flex;align-items:center;gap:24px;margin:20px 0}.sm-weather>strong{font-size:68px;font-weight:300}.sm-forecast{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.sm-forecast span,.sm-forecast strong{display:block}.sm button,.sm input,.sm select{font:inherit;border:1px solid #425b62;border-radius:8px;padding:10px 14px;color:#edf6f4;background:#1d333a}.sm button{cursor:pointer;min-height:44px}.sm button:hover{background:#2b4a51}.sm button:disabled,.sm input:disabled,.sm select:disabled{opacity:.45;cursor:not-allowed}.sm input,.sm select{width:100%;margin-top:6px}.sm input[type=range]{padding:0;accent-color:#83d9c3;min-height:35px}.sm label{display:block;font-size:13px;color:#bfd1d3}.sm-form,.sm-controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:20px 0}.sm-form label,.sm-controls label{flex:1;min-width:200px}.sm-notice{border-left:3px solid #e2b977;background:#302c24;padding:10px 16px;margin:12px 0;color:#f2d6ac}.sm-task{border-bottom:1px solid #304147;padding:14px 0}.sm-task.done b{text-decoration:line-through;color:#94aaa9}.sm-task button{margin-left:6px}.sm-places{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.sm-chart{width:100%;height:auto;max-height:230px;margin:20px 0}.sm footer{border-top:1px solid #304147;padding-top:20px;margin-top:25px;font-size:12px;color:#829ca3}.sm-mirror{background:#000;min-height:85vh;border-radius:0}.sm-sleep{display:flex;align-items:end;justify-content:center}.sm-sleep-label{color:#444;font-size:12px}.sm-mirror .sm-metrics article,.sm-mirror .sm-forecast article{background:#000;border-color:#333}.sm-mirror .sm-notice{background:#15120d}.sm-mirror .sm-header{margin-bottom:35px}@media(max-width:700px){.sm-overview{grid-template-columns:1fr}.sm-forecast{grid-template-columns:1fr}.sm-form>*{width:100%}.sm{padding:18px}.sm-task{align-items:start}.sm-header{align-items:start}.sm-mirror{min-height:90vh}.sm-metrics article{padding:13px}}\n.sm-calendar{border:1px solid #263c40;border-radius:20px;background:linear-gradient(145deg,#132326,#10191e 65%);padding:clamp(16px,3vw,28px);margin:28px 0}.sm-calendar .sm-section-title{margin-bottom:20px}.sm-calendar .sm-section-title h2{margin:2px 0 0;text-transform:capitalize}.sm-month-nav{display:flex;gap:8px}.sm-calendar-layout{display:grid;grid-template-columns:minmax(280px,1.15fr) minmax(280px,.85fr);gap:24px}.sm-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;align-content:start}.sm-weekday{text-align:center;color:#91aaa9;font-size:12px;padding:8px 0}.sm-day{height:58px;position:relative;display:flex;align-items:flex-start;justify-content:center;padding:8px!important;border:1px solid transparent!important;background:transparent!important;border-radius:12px!important}.sm-day:hover{background:#21383a!important}.sm-day.outside{opacity:.35}.sm-day.selected{background:#1d4844!important;border-color:#71d3b5!important}.sm-day.today span{color:#9ae1c6;font-weight:700}.sm-day-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-style:normal;font-size:9px;color:#9ae1c6}.sm-agenda{border-left:1px solid #30484a;padding-left:22px}.sm-agenda-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.sm-agenda-heading h3{font-size:18px;font-weight:500;margin:4px 0;text-transform:capitalize}.sm-primary{background:#75d4b1!important;color:#10201c!important;border-color:#75d4b1!important;font-weight:700}.sm-empty{padding:18px;border:1px dashed #3c5958;border-radius:14px}.sm-calendar-event{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #2b4041}.sm-calendar-event time{font-variant-numeric:tabular-nums;color:#a6e2cb;font-weight:700;min-width:46px}.sm-event-info{flex:1;min-width:0}.sm-event-info b{display:block;overflow-wrap:anywhere}.sm-event-info small{margin-top:2px}.sm-calendar-event.done .sm-event-info b{text-decoration:line-through;color:#829694}.sm-calendar-event>button{padding:6px 9px;min-width:38px}.sm-modal-backdrop{position:fixed;inset:0;z-index:10000;background:#000a;display:grid;place-items:center;padding:18px}.sm-modal{width:min(100%,440px);padding:22px;background:#152327;border:1px solid #476160;border-radius:18px;box-shadow:0 20px 80px #0008}.sm-modal h3{font-size:21px;font-weight:500;margin:0}.sm-modal label{margin:16px 0}.sm-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.sm-wake-agenda{padding:18px 20px;border:1px solid #284940;border-radius:16px;background:#101b18;margin:20px 0}.sm-wake-agenda h2{margin:2px 0}.sm-wake-event{display:flex;gap:14px;padding:8px 0;border-top:1px solid #283d38}.sm-wake-event b{color:#99e1c4;min-width:48px;font-variant-numeric:tabular-nums}\n@media(max-width:760px){.sm-calendar-layout{grid-template-columns:1fr}.sm-agenda{border-left:0;border-top:1px solid #30484a;padding:18px 0 0}.sm-calendar .sm-section-title{align-items:flex-start}.sm-day{height:48px;padding:5px!important}.sm-wake-agenda{padding:15px}}\n</style>\n",
         "storeOutMessages": false,
         "passthru": false,
         "resendOnRefresh": true,
@@ -479,7 +457,7 @@
         "width": 0,
         "height": 0,
         "head": "",
-        "format": "<template>\n  <main class=\"sm\" :class=\"{ 'sm-mirror': mirror, 'sm-sleep': mirror && !s.active }\">\n    <template v-if=\"!mirror || s.active\">\n      <header class=\"sm-header\">\n        <div><span class=\"sm-eyebrow\">SMART MIRROR / {{ mirror ? 'GƯƠNG' : 'ĐIỀU KHIỂN' }}</span><h1>{{ mirror ? pages[s.page || 0] : 'Không gian của bạn' }}</h1></div>\n        <span class=\"sm-status\" :class=\"{ok:connected && s.online}\">{{ !connected ? 'Mất kết nối Dashboard' : s.online ? 'ESP32 trực tuyến' : 'Chờ ESP32 / dữ liệu mới' }}</span>\n      </header>\n      <div v-if=\"!connected || !s.online\" class=\"sm-notice\">{{ !connected ? 'Đang kết nối lại Node-RED. Dữ liệu có thể đã cũ.' : 'Dữ liệu phòng chưa sẵn sàng. Điều khiển tạm khóa.' }}</div>\n      <div v-if=\"s.error && !mirror\" class=\"sm-notice\">{{ s.error }}</div>\n      <div v-for=\"r in s.reminders || []\" :key=\"r.id\" class=\"sm-notice\">Sắp đến giờ · {{ r.title }} — {{ date(r.at) }}</div>\n      <div v-for=\"a in s.alerts || []\" :key=\"a\" class=\"sm-notice\">{{ a }}</div>\n\n      <section v-if=\"!mirror || s.page === 0\" class=\"sm-overview\">\n        <div class=\"sm-clock\"><div>{{ time }}</div><p>{{ today }}</p><small>Giờ Việt Nam · UTC+7</small></div>\n        <div class=\"sm-metrics\">\n          <article><span>Nhiệt độ phòng</span><strong>{{ reading('temperature') }}<small> °C</small></strong><small>{{ freshness('temperature') }}</small></article>\n          <article><span>Độ ẩm phòng</span><strong>{{ reading('humidity') }}<small> %</small></strong><small>{{ freshness('humidity') }}</small></article>\n          <article><span>Quạt · {{ s.device?.mode || '--' }}</span><strong>{{ connected && s.online ? (s.device?.fan === 'ON' ? 'Bật' : s.device?.fan === 'OFF' ? 'Tắt' : '--') : '--' }}</strong><small>AUTO: bật ≥32°C · tắt ≤30°C</small></article>\n          <article><span>Đèn gương</span><strong>{{ connected && s.online && s.device?.light != null ? Math.round(s.device.light / 255 * 100) + '%' : '--' }}</strong><small>{{ s.active ? 'Gương đang hoạt động' : 'Gương đang ngủ' }}</small></article>\n        </div>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 1\" class=\"sm-panel\">\n        <div class=\"sm-section-title\"><h2>Thời tiết bên ngoài</h2><button v-if=\"!mirror\" @click=\"act('refreshWeather')\" :disabled=\"!s.location\">Cập nhật</button></div>\n        <p>{{ s.location?.name || 'Chọn vị trí ở phần cài đặt bên dưới' }}</p>\n        <template v-if=\"s.weather\">\n          <div class=\"sm-weather\"><strong>{{ s.weather.current.temperature_2m }}°</strong><div>{{ weatherName(s.weather.current.weather_code) }}<p>Độ ẩm {{ s.weather.current.relative_humidity_2m }}% · Gió {{ s.weather.current.wind_speed_10m }} km/h</p></div></div>\n          <div class=\"sm-forecast\"><article v-for=\"(day,i) in s.weather.daily.time\" :key=\"day\"><b>{{ day }}</b><span>{{ weatherName(s.weather.daily.weather_code[i]) }}</span><strong>{{ s.weather.daily.temperature_2m_min[i] }}° – {{ s.weather.daily.temperature_2m_max[i] }}°</strong><small>Mưa {{ s.weather.daily.precipitation_probability_max[i] }}%</small></article></div>\n          <small>{{ s.weatherStale ? 'Dữ liệu thời tiết cũ · ' : '' }}Cập nhật {{ date(s.weather.at) }}</small>\n        </template>\n        <p v-else>Chưa có dữ liệu thời tiết.</p><p v-if=\"s.weatherError\" class=\"sm-notice\">{{ s.weatherError }}</p>\n        <small>Nguồn: <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener\">Open-Meteo</a> · Số liệu ngoài trời khác cảm biến trong phòng.</small>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 2\" class=\"sm-panel\">\n        <h2>Lịch & nhắc việc</h2><p>Nhắc trên gương trước 15 phút · Giờ Việt Nam</p>\n        <p v-if=\"!visibleTasks.length\">Chưa có lịch sắp tới. Thêm việc ở trang Điều khiển.</p>\n        <div v-for=\"t in visibleTasks\" :key=\"t.id\" class=\"sm-task\" :class=\"{done:t.done}\"><div><b>{{ t.title }}</b><small>{{ date(t.at) }}{{ !t.done && t.at < clock ? ' · Đã quá giờ' : '' }}</small></div><div v-if=\"!mirror\"><button @click=\"act('toggleTask',{id:t.id})\">{{ t.done ? 'Mở lại' : 'Xong' }}</button><button @click=\"act('deleteTask',{id:t.id})\">Xóa</button></div></div>\n        <form v-if=\"!mirror\" class=\"sm-form\" @submit.prevent=\"addTask\"><label>Tên công việc<input v-model=\"taskTitle\" maxlength=\"120\" required placeholder=\"Ví dụ: Họp nhóm đồ án\"></label><label>Thời gian (giờ Việt Nam)<input v-model=\"taskAt\" type=\"datetime-local\" required></label><button type=\"submit\">Thêm nhắc việc</button></form>\n        <small>Danh sách nhập trực tiếp; chưa đồng bộ Google Calendar. Không có thông báo khi trình duyệt đóng.</small>\n      </section>\n\n      <template v-if=\"!mirror\">\n        <section class=\"sm-panel\"><h2>Điều khiển thiết bị</h2><p>Trạng thái được xác nhận từ ESP32; đèn chỉ điều chỉnh khi gương ACTIVE.</p>\n          <div class=\"sm-controls\"><label>Chế độ quạt<select :value=\"s.device?.mode || ''\" :disabled=\"!canControl\" @change=\"control('mode',$event.target.value)\"><option disabled value=\"\">Chưa xác nhận</option><option>AUTO</option><option>MANUAL</option></select></label>\n          <button :disabled=\"!canControl || s.device?.mode !== 'MANUAL' || !!s.pending?.fan\" @click=\"control('fan',s.device?.fan === 'ON' ? 'OFF' : 'ON')\">{{ s.device?.fan === 'ON' ? 'Tắt quạt' : 'Bật quạt' }}</button>\n          <label>Độ sáng mong muốn: {{ brightness }}/255<input v-model.number=\"brightness\" type=\"range\" min=\"0\" max=\"255\" :disabled=\"!canControl || !s.active\" @change=\"control('light',Number(brightness))\"></label></div>\n          <p v-if=\"Object.keys(s.pending || {}).length\">Đang chờ ESP32 xác nhận…</p>\n          <button :disabled=\"!canControl || !s.active\" @click=\"act('next')\">Trang tiếp theo trên gương →</button><small>Trang hiện tại: {{ pages[s.page || 0] }} · <a href=\"./guong\">Mở màn hình gương</a></small>\n        </section>\n        <section class=\"sm-panel\"><h2>Vị trí thời tiết</h2><p>Vị trí dùng chung cho gương. Tọa độ được lưu tại Node-RED và gửi tới Open-Meteo khi lấy thời tiết.</p>\n          <form class=\"sm-form\" @submit.prevent=\"act('search',{query:query})\"><label>Tỉnh / thành phố<input v-model=\"query\" minlength=\"2\" maxlength=\"80\" required placeholder=\"Đà Nẵng, Hà Nội…\"></label><button type=\"submit\">Tìm địa điểm</button><button type=\"button\" @click=\"locate\">Dùng vị trí của tôi</button></form>\n          <p v-if=\"localError\" class=\"sm-notice\">{{ localError }}</p><div class=\"sm-places\"><button v-for=\"p in s.places || []\" :key=\"p.lat + ',' + p.lon\" @click=\"act('location',p)\">{{ p.name }}</button></div>\n          <small v-if=\"s.location\">Đang dùng: {{ s.location.name }} · {{ s.location.lat }}, {{ s.location.lon }}</small><button v-if=\"s.location\" @click=\"act('clearLocation')\">Xóa vị trí đã lưu</button>\n        </section>\n        <section class=\"sm-panel\"><div class=\"sm-section-title\"><h2>Lịch sử nhiệt độ · 24 giờ</h2><button @click=\"exportHistory\" :disabled=\"!s.history?.length\">Xuất CSV</button></div><p>Mỗi phút một mẫu hợp lệ; khoảng trống thể hiện thời gian thiếu dữ liệu.</p>\n          <svg v-if=\"s.history?.length\" class=\"sm-chart\" viewBox=\"0 0 800 160\" role=\"img\" aria-label=\"Biểu đồ nhiệt độ 24 giờ\"><text x=\"4\" y=\"16\" fill=\"currentColor\">{{ chartMax }}°C</text><text x=\"4\" y=\"150\" fill=\"currentColor\">{{ chartMin }}°C</text><polyline v-for=\"(line,i) in chartLines\" :key=\"i\" :points=\"line\" fill=\"none\" stroke=\"#64d9bd\" stroke-width=\"2\"/><circle v-for=\"(h,i) in s.history\" :key=\"i\" :cx=\"chartX(h.at)\" :cy=\"chartY(h.temperature)\" r=\"2\" fill=\"#64d9bd\"/></svg><p v-else>Chưa có mẫu hợp lệ. Bật Wokwi và chờ dữ liệu.</p><small>Lịch sử phiên chạy hiện tại · nhiệt độ / độ ẩm có trong CSV.</small>\n        </section>\n      </template>\n      <footer><span>{{ mirror ? 'Nhấn nút trên gương để chuyển trang' : 'ESP32 → MQTT → Node-RED' }}</span><span v-if=\"mirror\">{{ (s.page || 0) + 1 }} / 3</span></footer>\n    </template>\n    <span v-else class=\"sm-sleep-label\">{{ connected ? 'Gương đang ngủ · Đến gần để bật' : 'Mất kết nối Node-RED' }}</span>\n  </main>\n</template>\n<script>\nexport default {\n  data() { return { mirror: true, s:{}, clock:Date.now(), connected:true, timer:null, query:'', taskTitle:'', taskAt:'', brightness:180, localError:'', pages:['Tổng quan','Thời tiết','Lịch & nhắc việc'] } },\n  computed: {\n    time() { return new Date(this.clock).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}) },\n    today() { return new Date(this.clock).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long',year:'numeric'}) },\n    canControl() { return this.connected && this.s.online },\n    visibleTasks() { return (this.s.tasks || []).filter(t => !this.mirror || (!t.done && t.at >= this.clock - 86400000)).slice(0,this.mirror ? 8 : 100) },\n    chartMin() { return Math.floor(Math.min(...(this.s.history || []).map(h=>h.temperature),25)-1) },\n    chartMax() { return Math.ceil(Math.max(...(this.s.history || []).map(h=>h.temperature),30)+1) },\n    chartLines() { const groups=[[]]; for(const h of this.s.history || []) { let g=groups[groups.length-1]; if(g.length && h.at-g[g.length-1].at>90000) { groups.push([]); g=groups[groups.length-1] } g.push(h) } return groups.map(g=>g.map(h=>this.chartX(h.at)+','+this.chartY(h.temperature)).join(' ')) }\n  },\n  watch: { msg: { immediate:true, handler(m) { if(m?.payload?.readings) { this.s=m.payload; if(!m.payload.pending?.light && m.payload.device?.light != null) this.brightness=m.payload.device.light } } } },\n  mounted() { this.timer=setInterval(()=>{this.clock=Date.now();this.connected=this.$socket.connected},1000); this.send({topic:'ui',payload:{action:'load'}}) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n    act(action,extra={}) { this.send({topic:'ui',payload:{action,...extra}}) },\n    control(key,value) { this.act('control',{key,value}) },\n    reading(k) { return this.connected && this.s.fresh?.[k] && this.clock-(this.s.readings[k]?.at || 0)<15000 ? this.s.readings[k].value.toFixed(1) : '--' },\n    freshness(k) { const r=this.s.readings?.[k]; return !r ? 'Chưa có số đo' : 'Đo lúc '+this.date(r.at) },\n    date(at) { return new Date(at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) },\n    weatherName(code) { if(code===0)return 'Trời quang';if(code<=3)return 'Có mây';if(code<=48)return 'Sương mù';if(code<=57)return 'Mưa phùn';if(code<=67)return 'Mưa';if(code<=77)return 'Tuyết';if(code<=86)return 'Mưa rào';return 'Dông' },\n    addTask() { this.act('addTask',{title:this.taskTitle,at:this.taskAt+':00+07:00'}); this.taskTitle=''; this.taskAt='' },\n    locate() { this.localError=''; if(!window.isSecureContext || !navigator.geolocation) {this.localError='Định vị cần HTTPS hoặc localhost. Bạn có thể tìm tên tỉnh/thành ở ô bên cạnh.';return} navigator.geolocation.getCurrentPosition(p=>this.act('location',{lat:p.coords.latitude,lon:p.coords.longitude,name:'Vị trí của tôi'}),e=>{this.localError=e.code===1?'Bạn chưa cho phép định vị. Hãy cho phép trong trình duyệt hoặc tìm địa điểm.':'Không lấy được vị trí. Thử lại hoặc tìm tên địa điểm.'},{timeout:15000,maximumAge:300000}) },\n    chartX(at) { return 50+((at-(this.s.now-86400000))/86400000)*740 },\n    chartY(t) { return 145-(t-this.chartMin)/(this.chartMax-this.chartMin)*125 },\n    exportHistory() { const rows=['time,temperature_c,humidity_pct',...(this.s.history || []).map(h=>new Date(h.at).toISOString()+','+h.temperature+','+h.humidity)];const url=URL.createObjectURL(new Blob([rows.join('\\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='smartmirror-history.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000) }\n  }\n}\n</script>\n<style>\nbody:has(.sm-mirror) .v-app-bar,body:has(.sm-mirror) .v-navigation-drawer{display:none!important}body:has(.sm-mirror) .v-main{--v-layout-top:0px!important;--v-layout-left:0px!important;background:#000!important}body:has(.sm-mirror) .nrdb-ui-group{background:#000!important;border:0!important}\n.sm{background:#10191e;color:#ecf4f3;padding:clamp(18px,4vw,48px);border-radius:18px;font-family:system-ui,sans-serif;line-height:1.6}.sm *{box-sizing:border-box}.sm h1{font-size:clamp(25px,4vw,40px);font-weight:500;margin:4px 0}.sm h2{font-size:22px;font-weight:500;margin:0 0 10px}.sm p{color:#afc3c7;margin:8px 0 16px}.sm small{display:block;color:#9eb4ba;font-size:12px}.sm a{color:#83d9c3}.sm-header,.sm-section-title,.sm-task,.sm footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sm-eyebrow{font-size:11px;letter-spacing:3px;color:#8bc4ba}.sm-status{font-size:12px;padding:7px 12px;border:1px solid #6c5940;border-radius:24px;color:#edc48d}.sm-status.ok{color:#8edec0;border-color:#376c59}.sm-overview{display:grid;grid-template-columns:1fr 1.5fr;gap:28px;margin:35px 0}.sm-clock>div{font-size:clamp(55px,9vw,105px);line-height:1.2;font-weight:300;letter-spacing:-4px;font-variant-numeric:tabular-nums}.sm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sm-metrics article,.sm-forecast article{padding:18px;background:#18262d;border:1px solid #2c3d43;border-radius:12px}.sm-metrics span{font-size:13px;color:#b7cacc}.sm-metrics strong{display:block;font-size:30px;font-weight:500}.sm-metrics strong small{display:inline;font-size:16px}.sm-panel{border-top:1px solid #304147;padding:28px 0}.sm-weather{display:flex;align-items:center;gap:24px;margin:20px 0}.sm-weather>strong{font-size:68px;font-weight:300}.sm-forecast{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.sm-forecast span,.sm-forecast strong{display:block}.sm button,.sm input,.sm select{font:inherit;border:1px solid #425b62;border-radius:8px;padding:10px 14px;color:#edf6f4;background:#1d333a}.sm button{cursor:pointer;min-height:44px}.sm button:hover{background:#2b4a51}.sm button:disabled,.sm input:disabled,.sm select:disabled{opacity:.45;cursor:not-allowed}.sm input,.sm select{width:100%;margin-top:6px}.sm input[type=range]{padding:0;accent-color:#83d9c3;min-height:35px}.sm label{display:block;font-size:13px;color:#bfd1d3}.sm-form,.sm-controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:20px 0}.sm-form label,.sm-controls label{flex:1;min-width:200px}.sm-notice{border-left:3px solid #e2b977;background:#302c24;padding:10px 16px;margin:12px 0;color:#f2d6ac}.sm-task{border-bottom:1px solid #304147;padding:14px 0}.sm-task.done b{text-decoration:line-through;color:#94aaa9}.sm-task button{margin-left:6px}.sm-places{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.sm-chart{width:100%;height:auto;max-height:230px;margin:20px 0}.sm footer{border-top:1px solid #304147;padding-top:20px;margin-top:25px;font-size:12px;color:#829ca3}.sm-mirror{background:#000;min-height:85vh;border-radius:0}.sm-sleep{display:flex;align-items:end;justify-content:center}.sm-sleep-label{color:#444;font-size:12px}.sm-mirror .sm-metrics article,.sm-mirror .sm-forecast article{background:#000;border-color:#333}.sm-mirror .sm-notice{background:#15120d}.sm-mirror .sm-header{margin-bottom:35px}@media(max-width:700px){.sm-overview{grid-template-columns:1fr}.sm-forecast{grid-template-columns:1fr}.sm-form>*{width:100%}.sm{padding:18px}.sm-task{align-items:start}.sm-header{align-items:start}.sm-mirror{min-height:90vh}.sm-metrics article{padding:13px}}\n</style>\n",
+        "format": "<template>\n  <main class=\"sm\" :class=\"{ 'sm-mirror': mirror, 'sm-sleep': mirror && !mirrorAwake }\">\n    <template v-if=\"!mirror || mirrorAwake\">\n      <header class=\"sm-header\">\n        <div><span class=\"sm-eyebrow\">SMART MIRROR / {{ mirror ? 'GƯƠNG' : 'LỊCH CỦA TÔI' }}</span><h1>{{ mirror ? pages[s.page || 0] : 'Lịch hoạt động' }}</h1></div>\n        <span class=\"sm-status\" :class=\"{ok:connected && s.online}\">{{ !connected ? 'Mất kết nối Dashboard' : s.online ? 'ESP32 trực tuyến' : 'Chờ ESP32 / dữ liệu mới' }}</span>\n      </header>\n      <div v-if=\"!connected || !s.online\" class=\"sm-notice\">{{ !connected ? 'Đang kết nối lại Node-RED. Dữ liệu có thể đã cũ.' : 'Chưa xác nhận kết nối với ESP32. Điều khiển tạm khóa.' }}</div>\n      <div v-if=\"s.error && !mirror\" class=\"sm-notice\">{{ s.error }}</div>\n      <div v-for=\"r in s.reminders || []\" :key=\"r.id\" class=\"sm-notice\">Sắp đến giờ · {{ r.title }} — {{ date(r.at) }}</div>\n      <div v-for=\"a in s.alerts || []\" :key=\"a\" class=\"sm-notice\">{{ a }}</div>\n      <section v-if=\"mirror && s.active\" class=\"sm-wake-agenda\"><span class=\"sm-eyebrow\">HÔM NAY · {{ today }}</span><h2>Lịch trong ngày</h2><p v-if=\"!todayTasks.length\">Hôm nay chưa có hoạt động nào được lên lịch.</p><div v-for=\"t in todayTasks\" :key=\"t.id\" class=\"sm-wake-event\"><b>{{ timeOnly(t.at) }}</b><span>{{ t.title }}</span></div></section>\n\n      <section v-if=\"!mirror || s.page === 0\" class=\"sm-overview\">\n        <div class=\"sm-clock\"><div>{{ time }}</div><p>{{ today }}</p><small>Giờ Việt Nam · UTC+7</small></div>\n        <div class=\"sm-metrics\">\n          <article><span>Nhiệt độ phòng</span><strong>{{ reading('temperature') }}<small> °C</small></strong><small>{{ freshness('temperature') }}</small></article>\n          <article><span>Độ ẩm phòng</span><strong>{{ reading('humidity') }}<small> %</small></strong><small>{{ freshness('humidity') }}</small></article>\n          <article><span>Đèn gương tự động</span><strong>{{ connected && s.online ? (s.device?.lamp === 'ON' ? 'Đang sáng' : s.device?.lamp === 'OFF' ? 'Đang tắt' : '--') : '--' }}</strong><small>Tự bật khi có người và phòng tối</small></article>\n          <article><span>Độ sáng màn hình</span><strong>{{ connected && s.online && s.device?.light != null ? Math.round(s.device.light / 255 * 100) + '%' : '--' }}</strong><small>{{ s.device?.lightSensor === 'FALLBACK' ? 'Cảm biến lỗi · dùng mức dự phòng' : 'Tự cân theo ánh sáng phòng · đèn gương cũng tự động' }}</small></article>\n        </div>\n      </section>\n\n      <section v-if=\"!mirror\" class=\"sm-panel sm-calendar\">\n        <div class=\"sm-section-title\"><div><span class=\"sm-eyebrow\">SẮP XẾP NGÀY CỦA BẠN</span><h2>{{ monthLabel }}</h2></div><div class=\"sm-month-nav\"><button aria-label=\"Tháng trước\" @click=\"shiftMonth(-1)\">‹</button><button @click=\"goToday\">Hôm nay</button><button aria-label=\"Tháng sau\" @click=\"shiftMonth(1)\">›</button></div></div>\n        <div class=\"sm-calendar-layout\"><div class=\"sm-calendar-grid\"><div v-for=\"d in weekdays\" :key=\"d\" class=\"sm-weekday\">{{ d }}</div><button v-for=\"cell in calendarCells\" :key=\"cell.key\" class=\"sm-day\" :class=\"{outside:cell.outside,selected:cell.key===selectedDay,today:cell.today}\" @click=\"selectedDay=cell.key\"><span>{{ cell.day }}</span><i v-if=\"cell.count\" class=\"sm-day-dot\">{{ cell.count > 9 ? '9+' : cell.count }}</i></button></div>\n          <aside class=\"sm-agenda\"><div class=\"sm-agenda-heading\"><div><span class=\"sm-eyebrow\">HOẠT ĐỘNG TRONG NGÀY</span><h3>{{ selectedDateLabel }}</h3></div><button class=\"sm-primary\" @click=\"newTask\">＋ Thêm</button></div><p v-if=\"!selectedTasks.length\" class=\"sm-empty\">Ngày này chưa có hoạt động. Thêm lịch hẹn, việc cần làm hoặc sự kiện.</p><article v-for=\"t in selectedTasks\" :key=\"t.id\" class=\"sm-calendar-event\" :class=\"{done:t.done}\"><time>{{ timeOnly(t.at) }}</time><div class=\"sm-event-info\"><b>{{ t.title }}</b><small>{{ t.done ? 'Đã hoàn thành' : 'Đã lên lịch' }}</small></div><button :aria-label=\"t.done ? 'Mở lại hoạt động' : 'Đánh dấu hoàn thành'\" @click=\"act('toggleTask',{id:t.id})\">✓</button><button aria-label=\"Sửa hoạt động\" @click=\"editTask(t)\">✎</button><button aria-label=\"Xóa hoạt động\" @click=\"act('deleteTask',{id:t.id})\">×</button></article></aside></div>\n        <div v-if=\"editorOpen\" class=\"sm-modal-backdrop\" @click.self=\"editorOpen=false\"><form class=\"sm-modal\" @submit.prevent=\"saveTask\"><div class=\"sm-section-title\"><h3>{{ editorId ? 'Sửa hoạt động' : 'Hoạt động mới' }}</h3><button type=\"button\" aria-label=\"Đóng\" @click=\"editorOpen=false\">×</button></div><label>Tên hoạt động<input v-model=\"taskTitle\" maxlength=\"120\" required autofocus placeholder=\"Ví dụ: Họp nhóm, tập thể dục…\"></label><label>Ngày và giờ<input v-model=\"taskAt\" type=\"datetime-local\" required></label><div class=\"sm-modal-actions\"><button type=\"button\" @click=\"editorOpen=false\">Hủy</button><button class=\"sm-primary\" type=\"submit\">Lưu hoạt động</button></div></form></div>\n      </section>\n\n      <section v-if=\"!mirror || s.page === 1\" class=\"sm-panel\">\n        <div class=\"sm-section-title\"><h2>Thời tiết bên ngoài</h2><button v-if=\"!mirror\" @click=\"act('refreshWeather')\" :disabled=\"!s.location\">Cập nhật</button></div>\n        <p>{{ s.location?.name || 'Chọn vị trí ở phần cài đặt bên dưới' }}</p>\n        <template v-if=\"s.weather\">\n          <div class=\"sm-weather\"><strong>{{ s.weather.current.temperature_2m }}°</strong><div>{{ weatherName(s.weather.current.weather_code) }}<p>Độ ẩm {{ s.weather.current.relative_humidity_2m }}% · Gió {{ s.weather.current.wind_speed_10m }} km/h</p></div></div>\n          <div class=\"sm-forecast\"><article v-for=\"(day,i) in s.weather.daily.time\" :key=\"day\"><b>{{ day }}</b><span>{{ weatherName(s.weather.daily.weather_code[i]) }}</span><strong>{{ s.weather.daily.temperature_2m_min[i] }}° – {{ s.weather.daily.temperature_2m_max[i] }}°</strong><small>Mưa {{ s.weather.daily.precipitation_probability_max[i] }}%</small></article></div>\n          <small>{{ s.weatherStale ? 'Dữ liệu thời tiết cũ · ' : '' }}Cập nhật {{ date(s.weather.at) }}</small>\n        </template>\n        <p v-else>Chưa có dữ liệu thời tiết.</p><p v-if=\"s.weatherError\" class=\"sm-notice\">{{ s.weatherError }}</p>\n        <small>Nguồn: <a href=\"https://open-meteo.com/\" target=\"_blank\" rel=\"noopener\">Open-Meteo</a> · Số liệu ngoài trời khác cảm biến trong phòng.</small>\n      </section>\n\n      <section v-if=\"mirror && s.page === 2\" class=\"sm-panel\"><h2>Lịch hoạt động hôm nay</h2><p>{{ today }}</p><p v-if=\"!todayTasks.length\">Hôm nay chưa có hoạt động nào được lên lịch.</p><div v-for=\"t in todayTasks\" :key=\"t.id\" class=\"sm-task\"><b>{{ timeOnly(t.at) }} · {{ t.title }}</b></div></section>\n\n\n\n      <template v-if=\"!mirror\">\n        <section class=\"sm-panel\"><h2>Vị trí thời tiết</h2><p>Vị trí dùng chung cho gương. Tọa độ được lưu tại Node-RED và gửi tới Open-Meteo khi lấy thời tiết.</p>\n          <form class=\"sm-form\" @submit.prevent=\"act('search',{query:query})\"><label>Tỉnh / thành phố<input v-model=\"query\" minlength=\"2\" maxlength=\"80\" required placeholder=\"Đà Nẵng, Hà Nội…\"></label><button type=\"submit\">Tìm địa điểm</button><button type=\"button\" @click=\"locate\">Dùng vị trí của tôi</button></form>\n          <p v-if=\"localError\" class=\"sm-notice\">{{ localError }}</p><div class=\"sm-places\"><button v-for=\"p in s.places || []\" :key=\"p.lat + ',' + p.lon\" @click=\"act('location',p)\">{{ p.name }}</button></div>\n          <small v-if=\"s.location\">Đang dùng: {{ s.location.name }} · {{ s.location.lat }}, {{ s.location.lon }}</small><button v-if=\"s.location\" @click=\"act('clearLocation')\">Xóa vị trí đã lưu</button>\n        </section>\n        <section class=\"sm-panel\"><div class=\"sm-section-title\"><h2>Lịch sử nhiệt độ · 24 giờ</h2><button @click=\"exportHistory\" :disabled=\"!s.history?.length\">Xuất CSV</button></div><p>Mỗi phút một mẫu hợp lệ; khoảng trống thể hiện thời gian thiếu dữ liệu.</p>\n          <svg v-if=\"s.history?.length\" class=\"sm-chart\" viewBox=\"0 0 800 160\" role=\"img\" aria-label=\"Biểu đồ nhiệt độ 24 giờ\"><text x=\"4\" y=\"16\" fill=\"currentColor\">{{ chartMax }}°C</text><text x=\"4\" y=\"150\" fill=\"currentColor\">{{ chartMin }}°C</text><polyline v-for=\"(line,i) in chartLines\" :key=\"i\" :points=\"line\" fill=\"none\" stroke=\"#64d9bd\" stroke-width=\"2\"/><circle v-for=\"(h,i) in s.history\" :key=\"i\" :cx=\"chartX(h.at)\" :cy=\"chartY(h.temperature)\" r=\"2\" fill=\"#64d9bd\"/></svg><p v-else>Chưa có mẫu hợp lệ. Bật Wokwi và chờ dữ liệu.</p><small>Lịch sử phiên chạy hiện tại · nhiệt độ / độ ẩm có trong CSV.</small>\n        </section>\n      </template>\n      <footer><span>{{ mirror ? 'Vuốt trái / phải trên màn hình để chuyển trang' : 'Ứng dụng lịch · Đồng bộ với gương thông minh' }}</span><span v-if=\"mirror\">{{ (s.page || 0) + 1 }} / 3</span></footer>\n    </template>\n    <span v-else class=\"sm-sleep-label\">{{ !connected ? 'Mất kết nối Node-RED' : !s.online ? 'Chờ kết nối ESP32' : 'Gương đang ngủ · Đến gần để bật' }}</span>\n  </main>\n</template>\n<script>\nexport default {\n  data() { const day=new Date(Date.now()+7*3600000).toISOString().slice(0,10); return { mirror: true, s:{}, clock:Date.now(), connected:true, timer:null, query:'', taskTitle:'', taskAt:'', editorId:null, editorOpen:false, calendarCursor:day, selectedDay:day, localError:'', weekdays:['T2','T3','T4','T5','T6','T7','CN'], pages:['Tổng quan','Thời tiết','Lịch hôm nay'] } },\n  computed: {\n    time() { return new Date(this.clock).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'}) },\n    today() { return new Date(this.clock).toLocaleDateString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',weekday:'long',day:'numeric',month:'long',year:'numeric'}) },\n    canControl() { return this.connected && this.s.online },\n    mirrorAwake() { return this.canControl && this.s.active },\n    todayKey() { return new Date(this.clock+7*3600000).toISOString().slice(0,10) },\n    todayTasks() { return (this.s.tasks || []).filter(t => this.dayKey(t.at)===this.todayKey).slice(0,8) },\n    selectedTasks() { return (this.s.tasks || []).filter(t => this.dayKey(t.at)===this.selectedDay) },\n    monthLabel() { const [y,m]=this.calendarCursor.split('-').map(Number);return new Intl.DateTimeFormat('vi-VN',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,1))) },\n    selectedDateLabel() { const [y,m,d]=this.selectedDay.split('-').map(Number);return new Intl.DateTimeFormat('vi-VN',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(Date.UTC(y,m-1,d))) },\n    calendarCells() { const [y,m]=this.calendarCursor.split('-').map(Number),first=new Date(Date.UTC(y,m-1,1)),offset=(first.getUTCDay()+6)%7,start=Date.UTC(y,m-1,1-offset);return Array.from({length:42},(_,i)=>{const d=new Date(start+i*86400000),key=d.toISOString().slice(0,10);return {key,day:d.getUTCDate(),outside:d.getUTCMonth()!==m-1,today:key===this.todayKey,count:(this.s.tasks||[]).filter(t=>this.dayKey(t.at)===key).length}}) },\n    chartMin() { return Math.floor(Math.min(...(this.s.history || []).map(h=>h.temperature),25)-1) },\n    chartMax() { return Math.ceil(Math.max(...(this.s.history || []).map(h=>h.temperature),30)+1) },\n    chartLines() { const groups=[[]]; for(const h of this.s.history || []) { let g=groups[groups.length-1]; if(g.length && h.at-g[g.length-1].at>90000) { groups.push([]); g=groups[groups.length-1] } g.push(h) } return groups.map(g=>g.map(h=>this.chartX(h.at)+','+this.chartY(h.temperature)).join(' ')) }\n  },\n  watch: { msg: { immediate:true, handler(m) { const next=m?.payload;if(next?.readings)this.s=next } } },\n  mounted() { this.timer=setInterval(()=>{this.clock=Date.now();this.connected=this.$socket.connected},1000); this.send({topic:'ui',payload:{action:'load'}}) },\n  unmounted() { clearInterval(this.timer) },\n  methods: {\n    act(action,extra={}) { this.send({topic:'ui',payload:{action,...extra}}) },\n    reading(k) { return this.connected && this.s.fresh?.[k] && this.clock-(this.s.readings[k]?.at || 0)<15000 ? this.s.readings[k].value.toFixed(1) : '--' },\n    freshness(k) { const r=this.s.readings?.[k]; return !r ? 'Chưa có số đo' : 'Đo lúc '+this.date(r.at) },\n    date(at) { return new Date(at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit',day:'2-digit',month:'2-digit'}) },\n    weatherName(code) { if(code===0)return 'Trời quang';if(code<=3)return 'Có mây';if(code<=48)return 'Sương mù';if(code<=57)return 'Mưa phùn';if(code<=67)return 'Mưa';if(code<=77)return 'Tuyết';if(code<=86)return 'Mưa rào';return 'Dông' },\n    dayKey(at) { return new Date(at+7*3600000).toISOString().slice(0,10) },\n    timeOnly(at) { return new Date(at+7*3600000).toISOString().slice(11,16) },\n    shiftMonth(delta) { const [y,m]=this.calendarCursor.split('-').map(Number),d=new Date(Date.UTC(y,m-1+delta,1));this.calendarCursor=d.toISOString().slice(0,7)+'-01';this.selectedDay=this.calendarCursor },\n    goToday() { this.calendarCursor=this.todayKey;this.selectedDay=this.todayKey },\n    newTask() { this.editorId=null;this.taskTitle='';this.taskAt=this.selectedDay+'T09:00';this.editorOpen=true },\n    editTask(t) { this.editorId=t.id;this.taskTitle=t.title;this.taskAt=new Date(t.at+7*3600000).toISOString().slice(0,16);this.editorOpen=true },\n    saveTask() { this.act('saveTask',{id:this.editorId,title:this.taskTitle,at:this.taskAt+':00+07:00'});this.editorOpen=false;this.taskTitle='';this.taskAt='';this.editorId=null },\n    locate() { this.localError=''; if(!window.isSecureContext || !navigator.geolocation) {this.localError='Định vị cần HTTPS hoặc localhost. Bạn có thể tìm tên tỉnh/thành ở ô bên cạnh.';return} navigator.geolocation.getCurrentPosition(p=>this.act('location',{lat:p.coords.latitude,lon:p.coords.longitude,name:'Vị trí của tôi'}),e=>{this.localError=e.code===1?'Bạn chưa cho phép định vị. Hãy cho phép trong trình duyệt hoặc tìm địa điểm.':'Không lấy được vị trí. Thử lại hoặc tìm tên địa điểm.'},{timeout:15000,maximumAge:300000}) },\n    chartX(at) { return 50+((at-(this.s.now-86400000))/86400000)*740 },\n    chartY(t) { return 145-(t-this.chartMin)/(this.chartMax-this.chartMin)*125 },\n    exportHistory() { const rows=['time,temperature_c,humidity_pct',...(this.s.history || []).map(h=>new Date(h.at).toISOString()+','+h.temperature+','+h.humidity)];const url=URL.createObjectURL(new Blob([rows.join('\\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='smartmirror-history.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000) }\n  }\n}\n</script>\n<style>\nbody:has(.sm-mirror) .v-app-bar,body:has(.sm-mirror) .v-navigation-drawer,body:has(.sm-calendar) .v-app-bar,body:has(.sm-calendar) .v-navigation-drawer{display:none!important}body:has(.sm-mirror) .v-main{--v-layout-top:0px!important;--v-layout-left:0px!important;background:#000!important}body:has(.sm-calendar) .v-main{--v-layout-top:0px!important;background:#081014!important}body:has(.sm-mirror) .nrdb-ui-group{background:#000!important;border:0!important}\n.sm{background:#10191e;color:#ecf4f3;padding:clamp(18px,4vw,48px);border-radius:18px;font-family:system-ui,sans-serif;line-height:1.6}.sm *{box-sizing:border-box}.sm h1{font-size:clamp(25px,4vw,40px);font-weight:500;margin:4px 0}.sm h2{font-size:22px;font-weight:500;margin:0 0 10px}.sm p{color:#afc3c7;margin:8px 0 16px}.sm small{display:block;color:#9eb4ba;font-size:12px}.sm a{color:#83d9c3}.sm-header,.sm-section-title,.sm-task,.sm footer{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.sm-eyebrow{font-size:11px;letter-spacing:3px;color:#8bc4ba}.sm-status{font-size:12px;padding:7px 12px;border:1px solid #6c5940;border-radius:24px;color:#edc48d}.sm-status.ok{color:#8edec0;border-color:#376c59}.sm-overview{display:grid;grid-template-columns:1fr 1.5fr;gap:28px;margin:35px 0}.sm-clock>div{font-size:clamp(55px,9vw,105px);line-height:1.2;font-weight:300;letter-spacing:-4px;font-variant-numeric:tabular-nums}.sm-metrics{display:grid;grid-template-columns:1fr 1fr;gap:12px}.sm-metrics article,.sm-forecast article{padding:18px;background:#18262d;border:1px solid #2c3d43;border-radius:12px}.sm-metrics span{font-size:13px;color:#b7cacc}.sm-metrics strong{display:block;font-size:30px;font-weight:500}.sm-metrics strong small{display:inline;font-size:16px}.sm-panel{border-top:1px solid #304147;padding:28px 0}.sm-weather{display:flex;align-items:center;gap:24px;margin:20px 0}.sm-weather>strong{font-size:68px;font-weight:300}.sm-forecast{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px}.sm-forecast span,.sm-forecast strong{display:block}.sm button,.sm input,.sm select{font:inherit;border:1px solid #425b62;border-radius:8px;padding:10px 14px;color:#edf6f4;background:#1d333a}.sm button{cursor:pointer;min-height:44px}.sm button:hover{background:#2b4a51}.sm button:disabled,.sm input:disabled,.sm select:disabled{opacity:.45;cursor:not-allowed}.sm input,.sm select{width:100%;margin-top:6px}.sm input[type=range]{padding:0;accent-color:#83d9c3;min-height:35px}.sm label{display:block;font-size:13px;color:#bfd1d3}.sm-form,.sm-controls{display:flex;gap:14px;align-items:end;flex-wrap:wrap;margin:20px 0}.sm-form label,.sm-controls label{flex:1;min-width:200px}.sm-notice{border-left:3px solid #e2b977;background:#302c24;padding:10px 16px;margin:12px 0;color:#f2d6ac}.sm-task{border-bottom:1px solid #304147;padding:14px 0}.sm-task.done b{text-decoration:line-through;color:#94aaa9}.sm-task button{margin-left:6px}.sm-places{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}.sm-chart{width:100%;height:auto;max-height:230px;margin:20px 0}.sm footer{border-top:1px solid #304147;padding-top:20px;margin-top:25px;font-size:12px;color:#829ca3}.sm-mirror{background:#000;min-height:85vh;border-radius:0}.sm-sleep{display:flex;align-items:end;justify-content:center}.sm-sleep-label{color:#444;font-size:12px}.sm-mirror .sm-metrics article,.sm-mirror .sm-forecast article{background:#000;border-color:#333}.sm-mirror .sm-notice{background:#15120d}.sm-mirror .sm-header{margin-bottom:35px}@media(max-width:700px){.sm-overview{grid-template-columns:1fr}.sm-forecast{grid-template-columns:1fr}.sm-form>*{width:100%}.sm{padding:18px}.sm-task{align-items:start}.sm-header{align-items:start}.sm-mirror{min-height:90vh}.sm-metrics article{padding:13px}}\n.sm-calendar{border:1px solid #263c40;border-radius:20px;background:linear-gradient(145deg,#132326,#10191e 65%);padding:clamp(16px,3vw,28px);margin:28px 0}.sm-calendar .sm-section-title{margin-bottom:20px}.sm-calendar .sm-section-title h2{margin:2px 0 0;text-transform:capitalize}.sm-month-nav{display:flex;gap:8px}.sm-calendar-layout{display:grid;grid-template-columns:minmax(280px,1.15fr) minmax(280px,.85fr);gap:24px}.sm-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;align-content:start}.sm-weekday{text-align:center;color:#91aaa9;font-size:12px;padding:8px 0}.sm-day{height:58px;position:relative;display:flex;align-items:flex-start;justify-content:center;padding:8px!important;border:1px solid transparent!important;background:transparent!important;border-radius:12px!important}.sm-day:hover{background:#21383a!important}.sm-day.outside{opacity:.35}.sm-day.selected{background:#1d4844!important;border-color:#71d3b5!important}.sm-day.today span{color:#9ae1c6;font-weight:700}.sm-day-dot{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);font-style:normal;font-size:9px;color:#9ae1c6}.sm-agenda{border-left:1px solid #30484a;padding-left:22px}.sm-agenda-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}.sm-agenda-heading h3{font-size:18px;font-weight:500;margin:4px 0;text-transform:capitalize}.sm-primary{background:#75d4b1!important;color:#10201c!important;border-color:#75d4b1!important;font-weight:700}.sm-empty{padding:18px;border:1px dashed #3c5958;border-radius:14px}.sm-calendar-event{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #2b4041}.sm-calendar-event time{font-variant-numeric:tabular-nums;color:#a6e2cb;font-weight:700;min-width:46px}.sm-event-info{flex:1;min-width:0}.sm-event-info b{display:block;overflow-wrap:anywhere}.sm-event-info small{margin-top:2px}.sm-calendar-event.done .sm-event-info b{text-decoration:line-through;color:#829694}.sm-calendar-event>button{padding:6px 9px;min-width:38px}.sm-modal-backdrop{position:fixed;inset:0;z-index:10000;background:#000a;display:grid;place-items:center;padding:18px}.sm-modal{width:min(100%,440px);padding:22px;background:#152327;border:1px solid #476160;border-radius:18px;box-shadow:0 20px 80px #0008}.sm-modal h3{font-size:21px;font-weight:500;margin:0}.sm-modal label{margin:16px 0}.sm-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}.sm-wake-agenda{padding:18px 20px;border:1px solid #284940;border-radius:16px;background:#101b18;margin:20px 0}.sm-wake-agenda h2{margin:2px 0}.sm-wake-event{display:flex;gap:14px;padding:8px 0;border-top:1px solid #283d38}.sm-wake-event b{color:#99e1c4;min-width:48px;font-variant-numeric:tabular-nums}\n@media(max-width:760px){.sm-calendar-layout{grid-template-columns:1fr}.sm-agenda{border-left:0;border-top:1px solid #30484a;padding:18px 0 0}.sm-calendar .sm-section-title{align-items:flex-start}.sm-day{height:48px;padding:5px!important}.sm-wake-agenda{padding:15px}}\n</style>\n",
         "storeOutMessages": false,
         "passthru": false,
         "resendOnRefresh": true,
@@ -494,11 +472,33 @@
         ]
     },
     {
-        "id": "sm-input-mode",
+        "id": "sm-input-lamp",
         "type": "mqtt in",
         "z": "sm-tab-mqtt",
-        "name": "Chế độ quạt",
-        "topic": "smartmirror/demo01/state/mode",
+        "name": "Đèn gương tự động",
+        "topic": "smartmirror/demo01/state/lamp",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "dc29b5681134edb7",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 210,
+        "y": 530,
+        "wires": [
+            [
+                "sm-data-out",
+                "sm-debug-lamp"
+            ]
+        ]
+    },
+    {
+        "id": "sm-input-light",
+        "type": "mqtt in",
+        "z": "sm-tab-mqtt",
+        "name": "Độ sáng tự động",
+        "topic": "smartmirror/demo01/state/light",
         "qos": "1",
         "datatype": "auto-detect",
         "broker": "dc29b5681134edb7",
@@ -510,16 +510,17 @@
         "y": 610,
         "wires": [
             [
-                "sm-data-out"
+                "sm-data-out",
+                "sm-debug-light"
             ]
         ]
     },
     {
-        "id": "sm-input-light",
+        "id": "sm-input-light-sensor",
         "type": "mqtt in",
         "z": "sm-tab-mqtt",
-        "name": "Độ sáng đèn",
-        "topic": "smartmirror/demo01/state/light",
+        "name": "Cảm biến ánh sáng",
+        "topic": "smartmirror/demo01/state/light-sensor",
         "qos": "1",
         "datatype": "auto-detect",
         "broker": "dc29b5681134edb7",
@@ -536,12 +537,63 @@
         ]
     },
     {
+        "id": "sm-input-page",
+        "type": "mqtt in",
+        "z": "sm-tab-mqtt",
+        "name": "Trang TFT",
+        "topic": "smartmirror/demo01/state/page",
+        "qos": "1",
+        "datatype": "auto-detect",
+        "broker": "dc29b5681134edb7",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 210,
+        "y": 770,
+        "wires": [
+            [
+                "sm-data-out"
+            ]
+        ]
+    },
+    {
+        "id": "sm-debug-lamp",
+        "type": "debug",
+        "z": "sm-tab-mqtt",
+        "name": "Xem đèn gương tự động",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 570,
+        "y": 530,
+        "wires": []
+    },
+    {
+        "id": "sm-debug-light",
+        "type": "debug",
+        "z": "sm-tab-mqtt",
+        "name": "Xem độ sáng tự động",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "x": 570,
+        "y": 610,
+        "wires": []
+    },
+    {
         "id": "sm-state",
         "type": "function",
         "z": "f680d3f76342e19a",
         "name": "Trạng thái gương / xác thực lệnh",
-        "func": "// Node-RED Function body. Outputs: UI snapshot, MQTT command, HTTPS request.\nconst now = Date.now();\nlet saved = {};\ntry { saved = flow.get('preferences', 'file') || {}; } catch (_) { saved = flow.get('preferences') || {}; }\nconst s = flow.get('mirror') || {\n    page: 0, active: false, broker: false, reportedOnline: false,\n    readings: {}, device: { mode: null, fan: null, light: null },\n    location: saved.location || null, weather: null, weatherError: '', places: [],\n    tasks: saved.tasks || [], history: [], pending: {}, error: '', lastSample: 0\n};\nlet command = null, request = null;\nconst text = v => Buffer.isBuffer(v) ? v.toString() : String(v);\nconst finite = v => typeof v === 'number' && Number.isFinite(v);\nconst online = () => s.broker && s.reportedOnline &&\n    ['temperature','humidity'].some(k => s.readings[k] && now - s.readings[k].at < 15000);\nfunction weatherRequest() {\n    if (!s.location || now - (s.requestAt || 0) < 10000) return;\n    s.requestAt = now;\n    const {lat, lon} = s.location;\n    request = { kind: 'weather', locationKey: `${lat},${lon}`,\n        url: `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=3&timezone=Asia%2FHo_Chi_Minh`, payload: '' };\n}\nif (msg.topic && msg.topic.startsWith('smartmirror/demo01/')) {\n    const tail = msg.topic.slice('smartmirror/demo01/'.length);\n    const v = text(msg.payload);\n    if (tail === 'sensor/temperature' || tail === 'sensor/humidity') {\n        const k = tail.split('/')[1], n = Number(v);\n        if (v.trim() && Number.isFinite(n) && n >= (k === 'temperature' ? -40 : 0) && n <= (k === 'temperature' ? 80 : 100) && !msg.retain) {\n            s.readings[k] = {value:n, at:now};\n        }\n    } else if (tail === 'status') s.reportedOnline = v === 'online';\n    else if (tail === 'state/active' && ['ACTIVE','SLEEP'].includes(v)) {\n        if (v === 'ACTIVE' && !s.active) s.page = 0;\n        s.active = v === 'ACTIVE';\n    } else if (tail === 'state/mode' && ['AUTO','MANUAL'].includes(v)) {\n        s.device.mode = v;\n        if (s.pending.mode?.value === v) delete s.pending.mode;\n    } else if (tail === 'state/fan' && ['ON','OFF'].includes(v)) {\n        s.device.fan = v;\n        if (s.pending.fan?.value === v) delete s.pending.fan;\n    } else if (tail === 'state/light' && /^\\d{1,3}$/.test(v) && Number(v) <= 255) {\n        s.device.light = Number(v);\n        if (s.pending.light?.value === v) delete s.pending.light;\n    } else if (tail === 'event/page' && msg.payload === 'NEXT' && s.active && online()) s.page = (s.page + 1) % 3;\n} else if (msg.topic === 'broker') {\n    s.broker = msg.payload === true;\n    if (!s.broker) {\n        s.reportedOnline = false;\n        s.readings = {}; // Reconnect must receive new telemetry before enabling controls.\n    }\n} else if (msg.kind === 'weather') {\n    if (s.location && msg.locationKey === `${s.location.lat},${s.location.lon}`) {\n        const w = msg.payload;\n        if (msg.statusCode === 200 && w?.current && finite(w.current.temperature_2m) && w.daily?.time) {\n            s.weather = {current:w.current, daily:w.daily, at:now}; s.weatherError = '';\n        } else s.weatherError = 'Không lấy được thời tiết. Sẽ tự thử lại.';\n    }\n} else if (msg.kind === 'geocode') {\n    if (msg.statusCode === 200 && Array.isArray(msg.payload?.results)) {\n        s.places = msg.payload.results.slice(0,5).map(p => ({name:[p.name,p.admin1,p.country].filter(Boolean).join(', '), lat:p.latitude, lon:p.longitude}));\n        s.error = s.places.length ? '' : 'Không tìm thấy địa điểm.';\n    } else { s.places = []; s.error = 'Không tìm thấy hoặc không kết nối được API địa điểm.'; }\n} else if (msg.topic === 'ui') {\n    const p = msg.payload || {};\n    s.error = '';\n    if (p.action === 'next' && s.active && online()) s.page = (s.page + 1) % 3;\n    else if (p.action === 'control') {\n        const valid = (p.key === 'mode' && ['AUTO','MANUAL'].includes(p.value)) ||\n            (p.key === 'fan' && ['ON','OFF'].includes(p.value) && s.device.mode === 'MANUAL') ||\n            (p.key === 'light' && Number.isInteger(p.value) && p.value >= 0 && p.value <= 255 && s.active);\n        if (!online()) s.error = 'ESP32 chưa có dữ liệu mới. Chưa gửi lệnh.';\n        else if (!valid) s.error = 'Lệnh không phù hợp với chế độ hiện tại.';\n        else if (String(s.device[p.key]) === String(p.value)) {\n            delete s.pending[p.key]; // Already confirmed; no redundant command needed.\n        } else {\n            command = {topic:`smartmirror/demo01/cmd/${p.key}`, payload:String(p.value), qos:1, retain:false};\n            s.pending[p.key] = {value:p.value, at:now};\n        }\n    } else if (p.action === 'search') {\n        if (typeof p.query === 'string' && p.query.trim().length >= 2 && now - (s.searchAt || 0) >= 2000) {\n            s.searchAt = now; s.places = [];\n            request = {kind:'geocode', url:`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(p.query.trim().slice(0,80))}&count=5&language=vi&format=json`, payload:''};\n        }\n    } else if (p.action === 'location') {\n        if (finite(p.lat) && finite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180) {\n            s.location = {lat:Number(p.lat.toFixed(4)), lon:Number(p.lon.toFixed(4)), name:typeof p.name === 'string' ? p.name.slice(0,120) : 'Vị trí của tôi'};\n            s.weather = null; s.weatherError = ''; s.places = []; s.requestAt = 0; weatherRequest();\n        }\n    } else if (p.action === 'clearLocation') {\n        s.location = null; s.weather = null; s.weatherError = ''; s.places = [];\n    } else if (p.action === 'addTask') {\n        const at = Date.parse(p.at);\n        if (typeof p.title === 'string' && p.title.trim() && Number.isFinite(at) && at > now && s.tasks.length < 100) {\n            s.tasks.push({id:`${now}-${Math.random().toString(36).slice(2,8)}`, title:p.title.trim().slice(0,120), at, done:false});\n        } else s.error = 'Nhập tên và thời gian trong tương lai (tối đa 100 việc).';\n    } else if (p.action === 'toggleTask') {\n        const t = s.tasks.find(t => t.id === p.id); if (t) t.done = !t.done;\n    } else if (p.action === 'deleteTask') s.tasks = s.tasks.filter(t => t.id !== p.id);\n    else if (p.action === 'refreshWeather') weatherRequest();\n}\nif (msg.topic === 'tick' && s.location && now - (s.requestAt || 0) >= 900000) weatherRequest();\nfor (const [key,p] of Object.entries(s.pending)) {\n    if (now - p.at > 8000) { delete s.pending[key]; s.error = 'Chưa nhận trạng thái xác nhận từ ESP32. Kiểm tra thiết bị trước khi thử lại.'; }\n}\nif (online() && now - s.lastSample >= 60000 && ['temperature','humidity'].every(k => s.readings[k] && now - s.readings[k].at < 15000)) {\n    s.lastSample = now;\n    s.history.push({at:now, temperature:s.readings.temperature.value, humidity:s.readings.humidity.value});\n}\ns.history = s.history.filter(h => now - h.at < 86400000).slice(-1440);\ns.tasks.sort((a,b) => a.at - b.at);\nflow.set('mirror', s);\n// Persist preferences and user tasks; volatile presence/telemetry never restored as current.\nif (msg.topic === 'ui' && ['location','clearLocation','addTask','toggleTask','deleteTask'].includes(msg.payload?.action)) {\n    const preferences = {location:s.location,tasks:s.tasks};\n    try { flow.set('preferences', preferences, 'file'); } catch (_) { flow.set('preferences', preferences); }\n}\nconst snapshot = {...s, now, online:online(), weatherStale:!s.weather || now - s.weather.at > 1800000};\nsnapshot.fresh = Object.fromEntries(['temperature','humidity'].map(k => [k, online() && !!s.readings[k] && now - s.readings[k].at < 15000]));\nsnapshot.reminders = s.tasks.filter(t => !t.done && t.at >= now - 60000 && t.at <= now + 900000);\nsnapshot.alerts = [];\nif (snapshot.fresh.temperature && s.readings.temperature.value >= 32) snapshot.alerts.push('Nhiệt độ phòng cao');\nif (snapshot.fresh.humidity && s.readings.humidity.value >= 80) snapshot.alerts.push('Độ ẩm phòng cao');\nreturn [{payload:snapshot}, command, request];\n",
-        "outputs": 3,
+        "func": "// Node-RED Function body. Outputs: UI snapshot, MQTT command, HTTPS request, USB serial command.\nconst now = Date.now();\nlet saved = {};\ntry { saved = flow.get('preferences', 'file') || {}; } catch (_) { saved = flow.get('preferences') || {}; }\nconst s = flow.get('mirror') || {\n    page: 0, active: false, broker: false, reportedOnline: false, heartbeatAt: null,\n    serialOnline: false, serialAt: null,\n    readings: {}, device: { lamp: null, light: null, lightSensor: null, page: null },\n    location: saved.location || null, weather: null, weatherError: '', places: [],\n    tasks: saved.tasks || [], history: [], pending: {}, error: '', lastSample: 0\n};\nlet command = null, request = null, serialCommand = null;\nlet displayChanged = false;\nconst text = v => Buffer.isBuffer(v) ? v.toString() : String(v);\nconst finite = v => typeof v === 'number' && Number.isFinite(v);\nconst online = () => (s.broker && s.reportedOnline &&\n    ((s.heartbeatAt != null && now - s.heartbeatAt < 15000) ||\n        ['temperature','humidity'].some(k => s.readings[k] && now - s.readings[k].at < 15000))) ||\n    (s.serialOnline && s.serialAt != null && now - s.serialAt < 15000);\nconst privateDisplay = typeof env !== 'undefined' && env.get('SMARTMIRROR_TFT_PRIVATE') === '1';\nconst vietnamDay = at => new Date(at + 7 * 3600000).toISOString().slice(0,10);\nfunction displayText(value) {\n    let result = '';\n    for (const ch of String(value || '').normalize('NFC').replace(/[^\\x20-\\x7E\\u00A0-\\u017F\\u1EA0-\\u1EF9]/g, ' ').trim()) {\n        if (Buffer.byteLength(result + ch, 'utf8') > 48) break;\n        result += ch;\n    }\n    return result;\n}\nfunction displayContent() {\n    const c = s.weather?.current;\n    const age = Math.floor((now - (s.weather?.at || 0)) / 1000);\n    const weather = c && finite(c.temperature_2m) && finite(c.relative_humidity_2m) &&\n        Number.isInteger(c.weather_code) && age >= 0 && age <= 86400 ? {\n            temperature:c.temperature_2m, humidity:Math.round(c.relative_humidity_2m), code:c.weather_code, age\n        } : null;\n    const today = vietnamDay(now);\n    const todayTasks = s.tasks.filter(t => vietnamDay(t.at) === today).slice(0,3);\n    return {\n        topic:'smartmirror/demo01/display/content',\n        payload:JSON.stringify({\n            v:1, time:Math.floor(now / 1000), weather,\n            location:privateDisplay ? displayText(s.location?.name || '') : '',\n            privateTasks:true,\n            tasks:todayTasks.map(t => ({title:displayText(t.title), at:Math.floor(t.at / 1000)}))\n        }),\n        qos:1, retain:false\n    };\n}\nfunction weatherRequest() {\n    if (!s.location || now - (s.requestAt || 0) < 10000) return;\n    s.requestAt = now;\n    const {lat, lon} = s.location;\n    request = { kind: 'weather', locationKey: `${lat},${lon}`,\n        url: `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&forecast_days=3&timezone=Asia%2FHo_Chi_Minh`, payload: '' };\n}\nif (msg.topic && msg.topic.startsWith('smartmirror/demo01/')) {\n    const tail = msg.topic.slice('smartmirror/demo01/'.length);\n    const v = text(msg.payload);\n    if (msg.serial) {\n        const serialWasFresh = s.serialOnline && s.serialAt != null && now - s.serialAt < 15000;\n        s.serialAt = now;\n        if (tail === 'status') s.serialOnline = v === 'online';\n        if (tail === 'status' && v === 'online' && !serialWasFresh) {\n            const content = displayContent();\n            serialCommand = {payload:`SMIRROR ${content.payload}\\n`};\n        }\n    }\n    if (tail === 'sensor/temperature' || tail === 'sensor/humidity') {\n        const k = tail.split('/')[1], n = Number(v);\n        if (v.trim() && Number.isFinite(n) && n >= (k === 'temperature' ? -40 : 0) && n <= (k === 'temperature' ? 80 : 100) && !msg.retain) {\n            s.readings[k] = {value:n, at:now};\n        }\n    } else if (tail === 'status' && ['online','offline'].includes(v) && !msg.serial) {\n        s.reportedOnline = v === 'online';\n        if (!s.reportedOnline) {\n            s.heartbeatAt = null;\n            s.readings = {};\n            s.pending = {};\n            s.device.page = null;\n        } else if (!msg.retain) s.heartbeatAt = now;\n    } else if (tail === 'state/active' && ['ACTIVE','SLEEP'].includes(v)) {\n        if (v === 'ACTIVE' && !s.active) s.page = 0;\n        s.active = v === 'ACTIVE';\n    } else if (tail === 'state/lamp' && ['ON','OFF'].includes(v)) {\n        s.device.lamp = v;\n    } else if (tail === 'state/light' && /^\\d{1,3}$/.test(v) && Number(v) <= 255) {\n        s.device.light = Number(v);\n    } else if (tail === 'state/light-sensor' && ['OK','FALLBACK'].includes(v)) {\n        s.device.lightSensor = v;\n    } else if (tail === 'state/page' && /^[0-2]$/.test(v) && !msg.retain) {\n        displayChanged = s.device.page == null;\n        s.device.page = Number(v);\n        if (s.active) s.page = s.device.page;\n        if (s.pending.page?.value === v) delete s.pending.page;\n    } else if (tail === 'event/page' && ['NEXT','PREV'].includes(msg.payload) && s.active && online() && s.device.page == null) {\n        s.page = (s.page + (msg.payload === 'NEXT' ? 1 : 2)) % 3;\n    }\n} else if (msg.topic === 'broker') {\n    s.broker = msg.payload === true;\n    if (!s.broker) {\n        s.reportedOnline = false;\n        s.heartbeatAt = null;\n        s.readings = {}; // Reconnect must receive new telemetry before enabling controls.\n        s.pending = {};\n        s.device.page = null;\n    }\n} else if (msg.kind === 'weather') {\n    if (s.location && msg.locationKey === `${s.location.lat},${s.location.lon}`) {\n        const w = msg.payload;\n        if (msg.statusCode === 200 && w?.current && finite(w.current.temperature_2m) && w.daily?.time) {\n            s.weather = {current:w.current, daily:w.daily, at:now}; s.weatherError = '';\n            displayChanged = true;\n        } else s.weatherError = 'Không lấy được thời tiết. Sẽ tự thử lại.';\n    }\n} else if (msg.kind === 'geocode') {\n    if (msg.statusCode === 200 && Array.isArray(msg.payload?.results)) {\n        s.places = msg.payload.results.slice(0,5).map(p => ({name:[p.name,p.admin1,p.country].filter(Boolean).join(', '), lat:p.latitude, lon:p.longitude}));\n        s.error = s.places.length ? '' : 'Không tìm thấy địa điểm.';\n    } else { s.places = []; s.error = 'Không tìm thấy hoặc không kết nối được API địa điểm.'; }\n} else if (msg.topic === 'ui') {\n    const p = msg.payload || {};\n    s.error = '';\n    if (p.action === 'next' && s.active && online()) {\n        if (s.device.page == null) s.page = (s.page + 1) % 3;\n        else if (!s.pending.page) {\n            const value = String((s.page + 1) % 3);\n            command = {topic:'smartmirror/demo01/cmd/page',payload:value,qos:1,retain:false};\n            s.pending.page = {value,at:now};\n        }\n    }\n    else if (p.action === 'search') {\n        if (typeof p.query === 'string' && p.query.trim().length >= 2 && now - (s.searchAt || 0) >= 2000) {\n            s.searchAt = now; s.places = [];\n            request = {kind:'geocode', url:`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(p.query.trim().slice(0,80))}&count=5&language=vi&format=json`, payload:''};\n        }\n    } else if (p.action === 'location') {\n        if (finite(p.lat) && finite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180) {\n            s.location = {lat:Number(p.lat.toFixed(4)), lon:Number(p.lon.toFixed(4)), name:typeof p.name === 'string' ? p.name.slice(0,120) : 'Vị trí của tôi'};\n            s.weather = null; s.weatherError = ''; s.places = []; s.requestAt = 0; weatherRequest();\n        }\n    } else if (p.action === 'clearLocation') {\n        s.location = null; s.weather = null; s.weatherError = ''; s.places = [];\n    } else if (p.action === 'saveTask') {\n        const at = Date.parse(p.at);\n        if (typeof p.title === 'string' && p.title.trim() && Number.isFinite(at) && at > 0) {\n            const existing = s.tasks.find(t => t.id === p.id);\n            if (existing) { existing.title = p.title.trim().slice(0,120); existing.at = at; }\n            else if (s.tasks.length < 100) s.tasks.push({id:typeof p.id === 'string' && p.id.length <= 64 ? p.id : `${now}-${Math.random().toString(36).slice(2,8)}`, title:p.title.trim().slice(0,120), at, done:false});\n            else s.error = 'Lịch đã có tối đa 100 hoạt động.';\n        } else s.error = 'Nhập tên hoạt động và ngày giờ hợp lệ.';\n    } else if (p.action === 'toggleTask') {\n        const t = s.tasks.find(t => t.id === p.id); if (t) t.done = !t.done;\n    } else if (p.action === 'updateTask') {\n        const t = s.tasks.find(t => t.id === p.id), at = Date.parse(p.at);\n        if (t && typeof p.title === 'string' && p.title.trim() && Number.isFinite(at) && typeof p.done === 'boolean') {\n            t.title = p.title.trim().slice(0,120); t.at = at; t.done = p.done;\n        }\n    } else if (p.action === 'deleteTask') s.tasks = s.tasks.filter(t => t.id !== p.id);\n    else if (p.action === 'refreshWeather') weatherRequest();\n}\nif (msg.topic === 'tick' && s.location && now - (s.requestAt || 0) >= 900000) weatherRequest();\nfor (const [key,p] of Object.entries(s.pending)) {\n    if (now - p.at > 8000) { delete s.pending[key]; s.error = 'Chưa nhận trạng thái xác nhận từ ESP32. Kiểm tra thiết bị trước khi thử lại.'; }\n}\nif (online() && now - s.lastSample >= 60000 && ['temperature','humidity'].every(k => s.readings[k] && now - s.readings[k].at < 15000)) {\n    s.lastSample = now;\n    s.history.push({at:now, temperature:s.readings.temperature.value, humidity:s.readings.humidity.value});\n}\ns.history = s.history.filter(h => now - h.at < 86400000).slice(-1440);\ns.tasks.sort((a,b) => a.at - b.at);\n// Persist preferences and user tasks; volatile presence/telemetry never restored as current.\nif (msg.topic === 'ui' && ['location','clearLocation','saveTask','toggleTask','updateTask','deleteTask'].includes(msg.payload?.action)) {\n    const preferences = {location:s.location,tasks:s.tasks};\n    try { flow.set('preferences', preferences, 'file'); } catch (_) { flow.set('preferences', preferences); }\n    displayChanged = true;\n}\nif (msg.topic === 'ui' && ['saveTask','toggleTask','updateTask','deleteTask'].includes(msg.payload?.action) && s.serialOnline && s.serialAt != null && now - s.serialAt < 15000) {\n    const content = displayContent();\n    serialCommand = {payload:`SMIRROR ${content.payload}\\n`};\n}\nconst snapshot = {...s, now, online:online(), weatherStale:!s.weather || now - s.weather.at > 1800000};\nsnapshot.fresh = Object.fromEntries(['temperature','humidity'].map(k => [k, online() && !!s.readings[k] && now - s.readings[k].at < 15000]));\nsnapshot.reminders = s.tasks.filter(t => !t.done && t.at >= now - 60000 && t.at <= now + 900000);\nsnapshot.alerts = [];\nif (snapshot.fresh.temperature && s.readings.temperature.value >= 32) snapshot.alerts.push('Nhiệt độ phòng cao');\nif (snapshot.fresh.humidity && s.readings.humidity.value >= 80) snapshot.alerts.push('Độ ẩm phòng cao');\nif (snapshot.online && s.device.page != null && (displayChanged || now - (s.lastDisplayAt || 0) >= 15000)) {\n    s.lastDisplayAt = now;\n    const content = displayContent();\n    command = command ? [command, content] : content;\n}\nflow.set('mirror', s);\nreturn [{payload:snapshot}, command, request, serialCommand];\n",
+        "outputs": 4,
         "timeout": 0,
         "noerr": 0,
         "initialize": "flow.set('mirror', null);",
@@ -558,8 +610,111 @@
             ],
             [
                 "sm-http"
+            ],
+            []
+        ]
+    },
+    {
+        "id": "sm-mobile-api",
+        "type": "function",
+        "z": "f680d3f76342e19a",
+        "name": "API lịch cho ứng dụng Android",
+        "func": "// Node-RED Function body: REST API for the separate Flutter calendar app.\nconst method = String(msg.req?.method || '').toUpperCase();\nconst id = String(msg.req?.params?.id || '');\nconst body = msg.payload && typeof msg.payload === 'object' ? msg.payload : {};\nlet saved = {};\ntry { saved = flow.get('preferences', 'file') || {}; }\ncatch (_) { saved = flow.get('preferences') || {}; }\nconst mirror = flow.get('mirror') || {};\nconst tasks = Array.isArray(mirror.tasks) ? mirror.tasks : Array.isArray(saved.tasks) ? saved.tasks : [];\nconst readings = mirror.readings || {};\nconst online = !!((mirror.broker && mirror.reportedOnline &&\n    ((mirror.heartbeatAt != null && Date.now() - mirror.heartbeatAt < 15000) ||\n        ['temperature','humidity'].some(key => readings[key] && Date.now() - readings[key].at < 15000))) ||\n    (mirror.serialOnline && mirror.serialAt != null && Date.now() - mirror.serialAt < 15000));\nconst json = (statusCode, payload, followUp = null) => [\n    {...msg,statusCode,headers:{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'},payload},\n    followUp\n];\nconst validTitle = value => typeof value === 'string' && value.trim().length > 0 && value.trim().length <= 120;\nconst validAt = value => Number.isSafeInteger(value) && value > 0 && value < 4102444800000;\nconst stateMessage = (action, properties) => ({topic:'ui',payload:{action,...properties}});\n\nif (method === 'GET') {\n    return json(200, {\n        tasks:tasks.map(t => ({id:t.id,title:t.title,at:t.at,done:!!t.done})),\n        serverTime:Date.now(),\n        device:{\n            online,\n            active:!!mirror.active,\n            lamp:mirror.device?.lamp || null,\n            screenBrightness:Number.isInteger(mirror.device?.light) ? mirror.device.light : null,\n            lightSensor:mirror.device?.lightSensor || null,\n            temperature:readings.temperature && Date.now() - readings.temperature.at < 15000 ? readings.temperature.value : null,\n            humidity:readings.humidity && Date.now() - readings.humidity.at < 15000 ? readings.humidity.value : null\n        }\n    });\n}\n\nif (method === 'POST') {\n    if (!validTitle(body.title) || !validAt(body.at))\n        return json(400, {error:'Tên hoạt động hoặc ngày giờ không hợp lệ.'});\n    if (tasks.length >= 100) return json(409, {error:'Lịch đã có tối đa 100 hoạt động.'});\n    const task = {id:`${Date.now()}-${Math.random().toString(36).slice(2,8)}`,title:body.title.trim(),at:body.at,done:false};\n    return json(201, {task}, stateMessage('saveTask',{...task,at:new Date(task.at).toISOString()}));\n}\n\nconst existing = tasks.find(task => task.id === id);\nif (!existing) return json(404, {error:'Không tìm thấy hoạt động.'});\n\nif (method === 'PUT') {\n    const title = body.title === undefined ? existing.title : body.title;\n    const at = body.at === undefined ? existing.at : body.at;\n    const done = body.done === undefined ? !!existing.done : body.done;\n    if (!validTitle(title) || !validAt(at) || typeof done !== 'boolean')\n        return json(400, {error:'Tên hoạt động, ngày giờ hoặc trạng thái không hợp lệ.'});\n    const task = {id:existing.id,title:title.trim(),at,done};\n    return json(200, {task}, stateMessage('updateTask',{...task,at:new Date(task.at).toISOString()}));\n}\n\nif (method === 'DELETE')\n    return json(200, {deleted:id}, stateMessage('deleteTask',{id}));\n\nreturn json(405, {error:'Phương thức không được hỗ trợ.'});\n",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 490,
+        "y": 640,
+        "wires": [
+            [
+                "sm-api-response"
+            ],
+            [
+                "sm-state"
             ]
         ]
+    },
+    {
+        "id": "sm-api-get",
+        "type": "http in",
+        "z": "f680d3f76342e19a",
+        "name": "Đọc lịch",
+        "url": "/api/calendar",
+        "method": "get",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 470,
+        "wires": [
+            [
+                "sm-mobile-api"
+            ]
+        ]
+    },
+    {
+        "id": "sm-api-post",
+        "type": "http in",
+        "z": "f680d3f76342e19a",
+        "name": "Thêm hoạt động",
+        "url": "/api/calendar",
+        "method": "post",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 520,
+        "wires": [
+            [
+                "sm-mobile-api"
+            ]
+        ]
+    },
+    {
+        "id": "sm-api-put",
+        "type": "http in",
+        "z": "f680d3f76342e19a",
+        "name": "Sửa / hoàn tất",
+        "url": "/api/calendar/:id",
+        "method": "put",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 570,
+        "wires": [
+            [
+                "sm-mobile-api"
+            ]
+        ]
+    },
+    {
+        "id": "sm-api-delete",
+        "type": "http in",
+        "z": "f680d3f76342e19a",
+        "name": "Xóa hoạt động",
+        "url": "/api/calendar/:id",
+        "method": "delete",
+        "upload": false,
+        "swaggerDoc": "",
+        "x": 180,
+        "y": 620,
+        "wires": [
+            [
+                "sm-mobile-api"
+            ]
+        ]
+    },
+    {
+        "id": "sm-api-response",
+        "type": "http response",
+        "z": "f680d3f76342e19a",
+        "name": "Phản hồi JSON cho ứng dụng",
+        "statusCode": "",
+        "headers": {},
+        "x": 820,
+        "y": 700,
+        "wires": []
     },
     {
         "id": "sm-tick",
@@ -607,14 +762,15 @@
             "ad7e97a894add6b8",
             "976bb2741d99bf7c",
             "522eede8e05cdc63",
-            "5c8f4e6589b47581",
             "ccaee23e940b1837",
             "3aa5e8b793ccfd3f",
-            "sm-input-mode",
-            "sm-input-light"
+            "sm-input-lamp",
+            "sm-input-light",
+            "sm-input-light-sensor",
+            "sm-input-page"
         ],
         "x": 210,
-        "y": 800,
+        "y": 880,
         "wires": [
             [
                 "sm-broker-normalize"
@@ -634,7 +790,7 @@
         "finalize": "",
         "libs": [],
         "x": 560,
-        "y": 800,
+        "y": 880,
         "wires": [
             [
                 "sm-data-out"
