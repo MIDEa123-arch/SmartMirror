@@ -1,7 +1,8 @@
 param(
     [int]$Port = 1881,
     [string]$SerialPort,
-    [switch]$ReloadFlow
+    [switch]$ReloadFlow,
+    [switch]$PrivateMqtt
 )
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path $PSScriptRoot -Parent
@@ -43,11 +44,21 @@ if (!(Test-Path $bcryptPath)) { throw 'Node-RED bcryptjs module was not found; i
 Push-Location $projectRoot
 try {
     if ($SerialPort) { $env:SMARTMIRROR_SERIAL_PORT = $SerialPort } else { Remove-Item Env:\SMARTMIRROR_SERIAL_PORT -ErrorAction SilentlyContinue }
+    $runtimeFlow = Join-Path $runtimePath 'flows.json'
+    if ($PrivateMqtt) {
+        if (!(Test-Path (Join-Path $runtimePath 'mosquitto\smartmirror-mqtt.json'))) { throw 'Run scripts/setup-private-mqtt.cjs first.' }
+        $env:SMARTMIRROR_MQTT_MODE = 'private'
+        $env:SMARTMIRROR_FLOW_OUTPUT = $runtimeFlow
+        & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'start-private-mqtt.ps1')
+        if ($LASTEXITCODE -ne 0) { throw 'Private MQTT broker could not be started.' }
+    } else {
+        Remove-Item Env:\SMARTMIRROR_MQTT_MODE -ErrorAction SilentlyContinue
+        Remove-Item Env:\SMARTMIRROR_FLOW_OUTPUT -ErrorAction SilentlyContinue
+    }
     & node.exe scripts/build-dashboard.cjs
     if ($LASTEXITCODE -ne 0) { throw 'Flow generation failed.' }
     if (!(Test-Path (Join-Path $projectRoot 'flows.json'))) { throw 'flows.json was not generated.' }
-    $runtimeFlow = Join-Path $runtimePath 'flows.json'
-    if ($ReloadFlow -or !(Test-Path $runtimeFlow)) {
+    if (!$PrivateMqtt -and ($ReloadFlow -or !(Test-Path $runtimeFlow))) {
         Copy-Item -LiteralPath (Join-Path $projectRoot 'flows.json') -Destination $runtimeFlow
     }
     $previousBind = $env:SMARTMIRROR_HOST
@@ -55,6 +66,8 @@ try {
     $previousToken = $env:SMARTMIRROR_API_TOKEN
     $previousAdminPassword = $env:SMARTMIRROR_EDITOR_PASSWORD
     $previousBcryptPath = $env:SMARTMIRROR_BCRYPTJS_PATH
+    $previousMqttMode = $env:SMARTMIRROR_MQTT_MODE
+    $previousFlowOutput = $env:SMARTMIRROR_FLOW_OUTPUT
     $env:SMARTMIRROR_HOST = '127.0.0.1'
     $env:PORT = [string]$Port
     $env:SMARTMIRROR_API_TOKEN = $token
@@ -84,13 +97,32 @@ try {
     else { Write-Host 'ESP32 serial bridge is off; use -SerialPort COMx when the ESP32 is connected by USB.' }
     Write-Host "Web fallback: https://127.0.0.1:$Port/dashboard/guong-thong-minh"
     Write-Host 'Keep this terminal open while using the phone app.'
-    & node-red.cmd --no-telemetry --userDir $runtimePath --settings (Join-Path $projectRoot 'node-red\settings.cjs') --port $Port
+    if ($PrivateMqtt) {
+        $nodeRedPath = Join-Path $globalModules 'node-red\red.js'
+        $runtimeLog = Join-Path $runtimePath 'node-red-private.log'
+        $runtimeErr = Join-Path $runtimePath 'node-red-private.err'
+        $nodeRedProcess = Start-Process -FilePath 'node.exe' -ArgumentList @($nodeRedPath,'--no-telemetry','--userDir',$runtimePath,'--settings',(Join-Path $projectRoot 'node-red\settings.cjs'),'--port',[string]$Port) -WorkingDirectory $projectRoot -WindowStyle Hidden -RedirectStandardOutput $runtimeLog -RedirectStandardError $runtimeErr -PassThru
+        try {
+            & node.exe scripts/deploy-private-mqtt-flow.cjs
+            if ($LASTEXITCODE -ne 0) { throw 'Node-RED could not install the encrypted private broker credentials.' }
+            Write-Host 'Private MQTT/TLS and calendar backend are running. Press Ctrl+C to stop Node-RED.'
+            while (!$nodeRedProcess.HasExited) { Start-Sleep -Seconds 1 }
+            Get-Content $runtimeLog -Tail 30 -ErrorAction SilentlyContinue
+            Get-Content $runtimeErr -Tail 20 -ErrorAction SilentlyContinue
+        } finally {
+            if (!$nodeRedProcess.HasExited) { Stop-Process -Id $nodeRedProcess.Id -Force }
+        }
+    } else {
+        & node-red.cmd --no-telemetry --userDir $runtimePath --settings (Join-Path $projectRoot 'node-red\settings.cjs') --port $Port
+    }
 } finally {
     $env:SMARTMIRROR_HOST = $previousBind
     $env:PORT = $previousPort
     $env:SMARTMIRROR_API_TOKEN = $previousToken
     $env:SMARTMIRROR_EDITOR_PASSWORD = $previousAdminPassword
     $env:SMARTMIRROR_BCRYPTJS_PATH = $previousBcryptPath
+    $env:SMARTMIRROR_MQTT_MODE = $previousMqttMode
+    $env:SMARTMIRROR_FLOW_OUTPUT = $previousFlowOutput
     Remove-Item Env:\SMARTMIRROR_SERIAL_PORT -ErrorAction SilentlyContinue
     Pop-Location
 }

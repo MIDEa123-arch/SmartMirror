@@ -26,10 +26,10 @@
         "type": "mqtt-broker",
         "name": "SmartMirror",
         "broker": "broker.emqx.io",
-        "port": 1883,
+        "port": 8883,
         "clientid": "",
         "autoConnect": true,
-        "usetls": false,
+        "usetls": true,
         "protocolVersion": 4,
         "keepalive": 60,
         "cleansession": true,
@@ -50,7 +50,9 @@
         "willPayload": "",
         "willMsg": {},
         "userProps": "",
-        "sessionExpiry": ""
+        "sessionExpiry": "",
+        "verifyservercert": true,
+        "tls": "sm-mqtt-tls-config"
     },
     {
         "id": "0988a90484e1800b",
@@ -358,6 +360,27 @@
                 "sm-data-out"
             ]
         ]
+    },
+    {
+        "id": "sm-mqtt-tls-config",
+        "type": "tls-config",
+        "name": "MQTT TLS · xác minh chứng chỉ",
+        "certType": "files",
+        "cert": "",
+        "key": "",
+        "p12": "",
+        "p12name": "",
+        "ca": "",
+        "certname": "",
+        "keyname": "",
+        "caname": "",
+        "servername": "broker.emqx.io",
+        "verifyservercert": true,
+        "alpnprotocol": "",
+        "certEnv": "",
+        "keyEnv": "",
+        "caEnv": "",
+        "credentials": {}
     },
     {
         "id": "sm-mirror-page",

@@ -1,6 +1,6 @@
 # SmartMirror — ESP32 + Node-RED
 
-Bản này gồm firmware ESP32, mô phỏng Wokwi, ứng dụng Android viết bằng Flutter và backend Node-RED. Khi triển khai theo USB, điện thoại chạy app, laptop nhận lịch và chuyển dữ liệu tới ESP32 qua cổng COM. Wokwi vẫn dùng MQTT để mô phỏng.
+Bản này gồm firmware ESP32, mô phỏng Wokwi, ứng dụng Android viết bằng Flutter và backend Node-RED. Khi triển khai theo USB, điện thoại chạy app, laptop nhận lịch và chuyển dữ liệu tới ESP32 qua cổng COM. Wokwi dùng MQTT qua TLS để mô phỏng.
 
 ## Chạy ngay trên Windows
 
@@ -104,7 +104,8 @@ Tài liệu: [Geocoding API](https://open-meteo.com/en/docs/geocoding-api),
 - Đèn gương chỉ sáng khi gương ACTIVE và phòng tối; đèn gương riêng và đèn nền TFT tự chỉnh bằng cùng cảm biến LDR. Màn hình sáng hơn khi phòng sáng và giảm sáng trong phòng tối.
 - HC-SR04 cần ba mẫu liên tiếp trong vùng **2 cm đến 2 m**, ghép với cạnh lên PIR trong cửa sổ 3 giây. Mỗi cạnh PIR chỉ dùng một lần.
 - Đặt hai mắt siêu âm lộ ra phía trước và hướng về vùng đứng soi. Đồ vật gần có thể thỏa khoảng cách nhưng không tự đánh thức gương nếu PIR không phát hiện chuyển động.
-- MQTT công cộng chỉ phục vụ mô phỏng; bản thật cần broker riêng có xác thực.
+- MQTT dùng TLS cổng 8883 và xác minh CA/chứng chỉ máy chủ ở Node-RED lẫn ESP32. Luồng app điện thoại qua HTTPS/USB và luồng ESP32 qua USB/COM không phụ thuộc MQTT.
+- Wokwi đang dùng broker EMQX công cộng: TLS mã hóa đường truyền và xác minh đúng máy chủ, nhưng broker công cộng là môi trường chia sẻ; không gửi dữ liệu riêng tư lên đó. Bản thật nên dùng broker riêng có TLS, tài khoản và ACL. Không bỏ xác minh chứng chỉ.
 - Lịch sử: một mẫu hợp lệ/phút, tối đa 24 giờ trong phiên chạy; xuất CSV có nhiệt độ và độ ẩm.
 - Lưu lịch/vị trí qua khởi động lại; lịch sử và trạng thái online không được khôi phục như dữ liệu mới.
   File context có thể cần tới 30 giây để flush; dừng bằng Ctrl+C để đóng sạch.
@@ -167,7 +168,7 @@ Wokwi dùng màn ILI9341 320 × 240 có FT6206 cảm ứng điện dung trên I�
 
 Khi PIR báo chuyển động và HC-SR04 xác nhận người ở trong 2 m, gương bật. Đèn gương chỉ sáng khi có người và LDR nhận thấy phòng tối; nó tự tăng sáng khi tối hơn. Cùng cảm biến đó điều chỉnh đèn nền TFT: phòng sáng thì màn hình sáng hơn, phòng tối thì màn hình giảm sáng để dễ nhìn. Gương ngủ thì cả đèn gương và màn hình đều tắt. Nếu LDR hỏng hoặc bị rút, firmware dùng mức dự phòng thay vì giữ PWM cũ. Khi người rời khỏi vùng đo, gương tắt sau 30 giây; nếu HC-SR04 mất dữ liệu, gương tắt theo ngưỡng stale 10 giây.
 
-Lịch hoạt động được nhập trong ứng dụng lịch ưu tiên điện thoại, có lịch tháng, chọn ngày, thêm/sửa/xóa hoạt động và đánh dấu hoàn thành. Node-RED chạy nền để lưu lịch; Wokwi đồng bộ qua MQTT, còn bản nối thật chuyển lịch qua USB/COM. Giao diện Node-RED không còn dùng để bật/tắt đèn hoặc chỉnh độ sáng. Khi gương bật, lịch của ngày hiện tại hiện trên màn hình và trên trang gương. Tệp lịch lưu trong context `localfilesystem` của Node-RED.
+Lịch hoạt động được nhập trong ứng dụng lịch ưu tiên điện thoại, có lịch tháng, chọn ngày, thêm/sửa/xóa hoạt động và đánh dấu hoàn thành. Node-RED chạy nền để lưu lịch; Wokwi đồng bộ qua MQTT/TLS, còn bản nối thật chuyển lịch qua USB/COM. Giao diện Node-RED không còn dùng để bật/tắt đèn hoặc chỉnh độ sáng. Khi gương bật, lịch của ngày hiện tại hiện trên màn hình và trên trang gương. Tệp lịch lưu trong context `localfilesystem` của Node-RED.
 
 ### Chân kết nối
 
@@ -217,9 +218,21 @@ Lệnh mặc định build bản Wokwi với ILI9341/FT6206. Đặt khoảng cá
 
 Có thể chạy bằng trình duyệt nếu tiện ích Wokwi trong VS Code hết hạn. Mở [mẫu ESP32 nạp firmware của Wokwi](https://wokwi.com/projects/305457271083631168), dán nội dung sơ đồ mô phỏng vào tab diagram.json, rồi nhấn F1 trong tab mã nguồn. Chọn **Upload Firmware and Start Simulation…** và mở tệp .pio/build/esp32dev/firmware.bin đã build ở trên.
 
-Bản ILI9488/XPT2046 dùng môi trường `esp32dev-hardware`. Cấu hình mạng trong `include/smartmirror_secrets.h` bằng cách sao chép tệp mẫu cùng thư mục. Bản phần cứng chờ 60 giây để PIR ổn định. Chọn jumper **L** trên PIR và vặn **TIME** về mức ngắn. Vuốt trái/phải cần thử trên module thật để xác nhận chiều trục và ngưỡng vì mỗi màn điện trở có sai số cơ khí khác nhau.
+Bản ILI9488/XPT2046 dùng môi trường `esp32dev-hardware`. Wi‑Fi và MQTT có thể cấu hình qua trang thiết lập của ESP32; thông tin lưu trong NVS để đổi mạng không cần nạp lại firmware. Tệp `include/smartmirror_secrets.h` vẫn có thể dùng để đặt cấu hình mặc định khi build. Bản phần cứng chờ 60 giây để PIR ổn định. Chọn jumper **L** trên PIR và vặn **TIME** về mức ngắn. Vuốt trái/phải cần thử trên module thật để xác nhận chiều trục và ngưỡng vì mỗi màn điện trở có sai số cơ khí khác nhau.
 
-Khi làm thật, cần driver MOSFET và nguồn riêng cho đèn LED. Bản Wokwi dùng broker công cộng phục vụ demo. Bản phần cứng có thể chọn MQTT nếu cấu hình broker hoặc dùng nối USB/COM qua laptop như hướng dẫn ở đầu tài liệu. Dashboard web vẫn có thể dùng làm màn hình dự phòng.
+Khi làm thật, cần driver MOSFET và nguồn riêng cho đèn LED. Bản Wokwi dùng broker EMQX công cộng qua TLS để demo; không đưa dữ liệu nhạy cảm lên broker công cộng. Bản phần cứng có thể chọn MQTT/TLS nếu cấu hình broker, CA và thông tin đăng nhập phù hợp, hoặc dùng nối USB/COM qua laptop như hướng dẫn ở đầu tài liệu. Dashboard web vẫn có thể dùng làm màn hình dự phòng.
+
+### Broker Mosquitto riêng qua Wi‑Fi
+
+ESP32 vẫn cắm USB vào laptop để lấy điện; khi chạy chế độ MQTT, dữ liệu đi qua Wi‑Fi nội bộ tới Mosquitto trên laptop. Laptop và ESP32 cần cùng mạng Wi‑Fi. App điện thoại tiếp tục dùng HTTPS/USB như trước.
+
+1. Cài broker và công cụ tạo chứng chỉ: `powershell -ExecutionPolicy Bypass -File scripts/install-private-mqtt.ps1`.
+2. Tạo CA/chứng chỉ/tài khoản riêng: `node scripts/setup-private-mqtt.cjs <IPv4-của-laptop>` (xem IPv4 Wi‑Fi bằng `ipconfig`). Tệp thông tin đăng nhập được giữ trong `.runtime/mosquitto/smartmirror-mqtt.json`, không commit lên Git.
+3. Cho phép TCP 8883 từ mạng nội bộ bằng một lần chạy PowerShell với quyền Administrator: `scripts/allow-private-mqtt-firewall.ps1`.
+4. Khởi động broker riêng cùng Node-RED: `powershell -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -PrivateMqtt -ReloadFlow`.
+5. Build `esp32dev-hardware` sau bước 2 để firmware tin CA riêng. Lần đầu, gương tạo Wi‑Fi `SmartMirror-…`; mật khẩu hiện trong Serial Monitor. Kết nối điện thoại/laptop vào điểm truy cập đó rồi mở `http://192.168.4.1`, nhập Wi‑Fi, IPv4 laptop, tên người dùng và mật khẩu trong tệp runtime ở bước 2.
+
+Khi đổi Wi‑Fi, thiết bị thử kết nối lại rồi mở điểm truy cập cấu hình sau khoảng 45 giây; lưu mạng mới trong bộ nhớ ESP32 nên không phải nạp firmware lại. Nếu laptop nhận IPv4 mới, chạy lại bước 1 với IP mới, chạy `scripts/start-private-mqtt.ps1 -Restart`, khởi động lại Node-RED bằng bước 3 và cập nhật IP broker trên trang cấu hình của gương. Đặt DHCP reservation cho laptop trên router sẽ tránh đổi IP thường xuyên. Wokwi không truy cập broker riêng trên laptop qua mạng nội bộ; chạy chế độ Wokwi bình thường để dùng broker demo công cộng.
 
 ## Sửa source và kiểm tra
 

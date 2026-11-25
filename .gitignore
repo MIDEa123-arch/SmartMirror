@@ -7,3 +7,4 @@ compile_commands.json
 .runtime/
 node_modules/
 /include/smartmirror_secrets.h
+/include/mosquitto_local_ca.h

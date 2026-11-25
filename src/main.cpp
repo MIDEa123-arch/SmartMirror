@@ -1,10 +1,15 @@
 #include <Arduino.h>
 #include <DHTesp.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <MQTT.h>
 #include <esp_system.h>
 #include <math.h>
 #include <time.h>
+#ifndef SMARTMIRROR_WOKWI
+#include <Preferences.h>
+#include <WebServer.h>
+#endif
 #include "mirror_display.h"
 #ifdef SMARTMIRROR_WOKWI
 #include <Wire.h>
@@ -14,9 +19,21 @@ Adafruit_FT6206 touchController;
 #include <XPT2046_Touchscreen.h>
 XPT2046_Touchscreen touchController(16);
 #endif
+#include "emqx_public_ca.h"
+#if !defined(SMARTMIRROR_WOKWI) && __has_include("mosquitto_local_ca.h")
+#include "mosquitto_local_ca.h"
+#endif
 
 #if __has_include("smartmirror_secrets.h") && !defined(SMARTMIRROR_WOKWI)
 #include "smartmirror_secrets.h"
+#endif
+
+#ifndef SMARTMIRROR_MQTT_CA_CERT
+#if !defined(SMARTMIRROR_WOKWI) && defined(MOSQUITTO_LOCAL_CA_CERT)
+#define SMARTMIRROR_MQTT_CA_CERT MOSQUITTO_LOCAL_CA_CERT
+#else
+#define SMARTMIRROR_MQTT_CA_CERT EMQX_PUBLIC_CA_CERT
+#endif
 #endif
 
 // Chan dung voi diagram.json hien tai
@@ -76,7 +93,7 @@ constexpr unsigned long DISPLAY_INTERVAL = 250UL;
 const char *WIFI_SSID = "Wokwi-GUEST";
 const char *WIFI_PASSWORD = "";
 const char *MQTT_SERVER = "broker.emqx.io";
-constexpr int MQTT_PORT = 1883;
+constexpr int MQTT_PORT = 8883;
 const char *MQTT_USER = "";
 const char *MQTT_PASSWORD = "";
 #else
@@ -84,17 +101,18 @@ const char *MQTT_PASSWORD = "";
 #define SMARTMIRROR_WIFI_SSID ""
 #define SMARTMIRROR_WIFI_PASSWORD ""
 #define SMARTMIRROR_MQTT_HOST ""
-#define SMARTMIRROR_MQTT_PORT 1883
+#define SMARTMIRROR_MQTT_PORT 8883
 #define SMARTMIRROR_MQTT_USER ""
 #define SMARTMIRROR_MQTT_PASSWORD ""
 #endif
-const char *WIFI_SSID = SMARTMIRROR_WIFI_SSID;
-const char *WIFI_PASSWORD = SMARTMIRROR_WIFI_PASSWORD;
-const char *MQTT_SERVER = SMARTMIRROR_MQTT_HOST;
-constexpr int MQTT_PORT = SMARTMIRROR_MQTT_PORT;
-const char *MQTT_USER = SMARTMIRROR_MQTT_USER;
-const char *MQTT_PASSWORD = SMARTMIRROR_MQTT_PASSWORD;
+char WIFI_SSID[33] = SMARTMIRROR_WIFI_SSID;
+char WIFI_PASSWORD[65] = SMARTMIRROR_WIFI_PASSWORD;
+char MQTT_SERVER[64] = SMARTMIRROR_MQTT_HOST;
+int MQTT_PORT = SMARTMIRROR_MQTT_PORT;
+char MQTT_USER[65] = SMARTMIRROR_MQTT_USER;
+char MQTT_PASSWORD[65] = SMARTMIRROR_MQTT_PASSWORD;
 #endif
+const char *MQTT_CA_CERT = SMARTMIRROR_MQTT_CA_CERT;
 
 // Duong dan topic
 const char *TOPIC_TEMP = "smartmirror/demo01/sensor/temperature";
@@ -110,8 +128,9 @@ const char *TOPIC_STATE_ACTIVE = "smartmirror/demo01/state/active";
 const char *TOPIC_STATUS = "smartmirror/demo01/status";
 
 DHTesp dht;
-WiFiClient wifiClient;
+WiFiClientSecure mqttTlsClient;
 MQTTClient mqtt(768);
+bool mqttTransportReady = false;
 String pendingContent;
 String serialLineBuffer;
 bool pendingContentFromSerial = false;
@@ -150,9 +169,71 @@ unsigned long lastLightRead = 0;
 unsigned long lastValidLightAt = 0;
 unsigned long lastWiFiAttempt = 0;
 unsigned long lastMqttAttempt = 0;
+unsigned long mqttUnavailableAt = 0;
+unsigned long wifiStartedAt = 0;
+unsigned long mqttConnectedAt = 0;
 unsigned long lastHeartbeatAt = 0;
 unsigned long lastSerialHeartbeatAt = 0;
 unsigned long lastDisplayRefresh = 0;
+
+#ifndef SMARTMIRROR_WOKWI
+Preferences networkPreferences;
+WebServer setupServer(80);
+bool setupPortalActive = false;
+char setupPassword[12] = "";
+
+void startNetworkSetupPortal()
+{
+  if (setupPortalActive) return;
+  String suffix = WiFi.macAddress();
+  suffix.replace(":", "");
+  suffix = suffix.substring(max(0, static_cast<int>(suffix.length()) - 6));
+  String apName = "SmartMirror-" + suffix;
+  snprintf(setupPassword, sizeof(setupPassword), "SM%06lu!", static_cast<unsigned long>(esp_random() % 1000000UL));
+  WiFi.mode(WIFI_AP_STA);
+  WiFi.softAP(apName.c_str(), setupPassword);
+  setupServer.on("/", HTTP_GET, []() {
+    setupServer.send(200, "text/html; charset=utf-8",
+      "<!doctype html><html lang='vi'><meta name='viewport' content='width=device-width,initial-scale=1'>"
+      "<title>Thiết lập gương</title><style>body{font:16px system-ui;max-width:460px;margin:32px auto;padding:0 18px;background:#eef5f4;color:#142522}"
+      "input{box-sizing:border-box;width:100%;padding:12px;margin:6px 0 16px;border:1px solid #9cb4ae;border-radius:9px}button{padding:13px 18px;background:#126d5b;color:white;border:0;border-radius:9px}</style>"
+      "<h2>Kết nối SmartMirror</h2><form method='post' action='/save'>"
+      "<label>Tên Wi-Fi</label><input name='ssid' maxlength='32' required>"
+      "<label>Mật khẩu Wi-Fi</label><input name='wifi' type='password' maxlength='64'>"
+      "<label>Địa chỉ laptop chạy Mosquitto</label><input name='host' maxlength='63' placeholder='Ví dụ: 192.168.1.20' required>"
+      "<label>Tên đăng nhập MQTT</label><input name='user' maxlength='64' value='smartmirror' required>"
+      "<label>Mật khẩu MQTT</label><input name='pass' type='password' maxlength='64' required>"
+      "<button type='submit'>Lưu và kết nối</button></form></html>");
+  });
+  setupServer.on("/save", HTTP_POST, []() {
+    const String ssid=setupServer.arg("ssid"), wifi=setupServer.arg("wifi"), host=setupServer.arg("host");
+    const String user=setupServer.arg("user"), pass=setupServer.arg("pass");
+    if (!ssid.length() || ssid.length()>32 || !host.length() || host.length()>63 || !user.length() || user.length()>64 || !pass.length() || pass.length()>64 || wifi.length()>64) {
+      setupServer.send(400,"text/plain; charset=utf-8","Thông tin chưa hợp lệ. Kiểm tra lại rồi gửi lại."); return;
+    }
+    networkPreferences.begin("sm-network",false);
+    networkPreferences.putString("ssid",ssid); networkPreferences.putString("wifi",wifi);
+    networkPreferences.putString("host",host); networkPreferences.putString("user",user); networkPreferences.putString("pass",pass);
+    networkPreferences.end();
+    setupServer.send(200,"text/html; charset=utf-8","<!doctype html><meta charset='utf-8'><h2>Đã lưu. Gương đang khởi động lại…</h2>");
+    delay(700); ESP.restart();
+  });
+  setupServer.begin();
+  setupPortalActive=true;
+  Serial.printf("Wi-Fi/MQTT setup: ket noi Wi-Fi %s, mat khau %s; mo http://192.168.4.1\n",apName.c_str(),setupPassword);
+}
+
+void loadNetworkSettings()
+{
+  networkPreferences.begin("sm-network",true);
+  if(networkPreferences.isKey("ssid")) networkPreferences.getString("ssid",WIFI_SSID,sizeof(WIFI_SSID));
+  if(networkPreferences.isKey("wifi")) networkPreferences.getString("wifi",WIFI_PASSWORD,sizeof(WIFI_PASSWORD));
+  if(networkPreferences.isKey("host")) networkPreferences.getString("host",MQTT_SERVER,sizeof(MQTT_SERVER));
+  if(networkPreferences.isKey("user")) networkPreferences.getString("user",MQTT_USER,sizeof(MQTT_USER));
+  if(networkPreferences.isKey("pass")) networkPreferences.getString("pass",MQTT_PASSWORD,sizeof(MQTT_PASSWORD));
+  networkPreferences.end();
+}
+#endif
 
 // Chi gui MQTT khi dang ket noi Broker
 void sendMQTT(const char *topic, const char *value, bool retained = false, int qos = 0)
@@ -514,7 +595,14 @@ void readLaptopSerial()
 void maintainConnections(unsigned long now)
 {
   if (!WIFI_SSID[0])
+#ifndef SMARTMIRROR_WOKWI
+  {
+    startNetworkSetupPortal();
     return;
+  }
+#else
+    return;
+#endif
   if (WiFi.status() != WL_CONNECTED)
   {
     if (now - lastWiFiAttempt >= WIFI_RETRY)
@@ -523,6 +611,10 @@ void maintainConnections(unsigned long now)
       Serial.println("Dang thu ket noi lai Wi-Fi...");
       WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
     }
+#ifndef SMARTMIRROR_WOKWI
+    if (!setupPortalActive && wifiStartedAt && now - wifiStartedAt >= 45000UL)
+      startNetworkSetupPortal();
+#endif
     return;
   }
 
@@ -532,11 +624,38 @@ void maintainConnections(unsigned long now)
     configTime(0, 0, "time.google.com", "pool.ntp.org");
   }
   if (!MQTT_SERVER[0])
+#ifndef SMARTMIRROR_WOKWI
+  {
+    startNetworkSetupPortal();
     return;
+  }
+#else
+    return;
+#endif
+  if (!mqttTransportReady)
+    return;
+
+  if (!mqtt.connected())
+  {
+    if (!mqttUnavailableAt) mqttUnavailableAt = now ? now : 1;
+#ifndef SMARTMIRROR_WOKWI
+    if (!setupPortalActive && now - mqttUnavailableAt >= 45000UL)
+      startNetworkSetupPortal();
+#endif
+  }
+  else mqttUnavailableAt = 0;
 
   if (!mqtt.connected() && now - lastMqttAttempt >= MQTT_RETRY)
   {
     lastMqttAttempt = now;
+    // TLS certificate validation needs a synchronized wall clock. Keep the
+    // mirror sensors/serial path alive while NTP is unavailable, but fail closed
+    // for MQTT rather than accepting an unverifiable broker certificate.
+    if (time(nullptr) < 1700000000)
+    {
+      Serial.println("MQTT TLS attend la synchronisation NTP");
+      return;
+    }
     String clientId = "smartmirror-esp32-";
     clientId += WiFi.macAddress();
     clientId.replace(":", "");
@@ -544,6 +663,7 @@ void maintainConnections(unsigned long now)
     if (mqtt.connect(clientId.c_str(), MQTT_USER[0] ? MQTT_USER : nullptr,
                      MQTT_USER[0] ? MQTT_PASSWORD : nullptr))
     {
+      mqttUnavailableAt = 0;
       Serial.println("MQTT da ket noi");
       mqtt.subscribe(TOPIC_CMD_PAGE, 1);
       mqtt.subscribe(TOPIC_DISPLAY_CONTENT);
@@ -576,6 +696,9 @@ void maintainConnections(unsigned long now)
 void setup()
 {
   Serial.begin(115200);
+#ifndef SMARTMIRROR_WOKWI
+  loadNetworkSettings();
+#endif
   pinMode(PIN_DHT, INPUT_PULLUP);
   dht.setup(PIN_DHT, DHTesp::DHT22);
 #ifdef SMARTMIRROR_WOKWI
@@ -602,8 +725,16 @@ void setup()
 
   snprintf(bootId, sizeof(bootId), "%08lx%08lx",
            static_cast<unsigned long>(esp_random()), static_cast<unsigned long>(esp_random()));
-  if (MQTT_SERVER[0])
-    mqtt.begin(MQTT_SERVER, MQTT_PORT, wifiClient);
+  if (MQTT_SERVER[0] && MQTT_CA_CERT[0])
+  {
+    mqttTlsClient.setCACert(MQTT_CA_CERT);
+    mqtt.begin(MQTT_SERVER, MQTT_PORT, mqttTlsClient);
+    mqttTransportReady = true;
+  }
+  else if (MQTT_SERVER[0])
+  {
+    Serial.println("MQTT TLS tat: chua cau hinh CA certificate");
+  }
   mqtt.onMessage(mqttCallback);
   mqtt.setOptions(15, true, 1000);
   mqtt.setWill(TOPIC_STATUS, "offline", true, 1);
@@ -611,12 +742,19 @@ void setup()
   if (WIFI_SSID[0])
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
   lastWiFiAttempt = millis();
+  wifiStartedAt = lastWiFiAttempt;
+#ifndef SMARTMIRROR_WOKWI
+  if (!WIFI_SSID[0] || !MQTT_SERVER[0]) startNetworkSetupPortal();
+#endif
   lastActivityTime = millis();
   Serial.println("ESP32 da khoi dong");
 }
 
 void loop()
 {
+#ifndef SMARTMIRROR_WOKWI
+  if (setupPortalActive) setupServer.handleClient();
+#endif
   readLaptopSerial();
   const unsigned long serialTime = millis();
   if (serialTime - lastSerialHeartbeatAt >= HEARTBEAT_INTERVAL)

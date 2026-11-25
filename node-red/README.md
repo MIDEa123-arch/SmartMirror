@@ -11,7 +11,9 @@ Từ thư mục project chạy:
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -ReloadFlow
 ```
 
-Backend chỉ lắng nghe trên `127.0.0.1:1881`, dùng HTTPS và một mã ghép nối in ở terminal. Wokwi tiếp tục giao tiếp với Node-RED qua MQTT công cộng để mô phỏng.
+Backend chỉ lắng nghe trên `127.0.0.1:1881`, dùng HTTPS và một mã ghép nối in ở terminal. Wokwi giao tiếp với Node-RED qua MQTT/TLS cổng 8883; Node-RED xác minh chứng chỉ broker. ESP32 cũng dùng TLS và CA khi cấu hình MQTT. Luồng điện thoại→HTTPS→Node-RED→USB/COM→ESP32 không dùng MQTT. Broker EMQX công cộng chỉ phù hợp mô phỏng vì các topic dùng chung; không gửi thông tin riêng tư qua đó. Bản triển khai nên dùng broker riêng có TLS, tài khoản và ACL.
+
+Để cài và chạy MQTT riêng trên laptop cho ESP32 qua Wi‑Fi, chạy `scripts/install-private-mqtt.ps1`, rồi `node scripts/setup-private-mqtt.cjs <IPv4-laptop>`, sau đó `scripts/start-dashboard.ps1 -PrivateMqtt -ReloadFlow`. Broker đòi tài khoản, chỉ cho truy cập topic `smartmirror/demo01/#`, và dùng CA local để xác minh TLS. Mở firewall TCP 8883 chỉ cho `LocalSubnet` bằng script quản trị một lần. Không mở cổng này ra Internet.
 
 ## Chạy với điện thoại và ESP32
 

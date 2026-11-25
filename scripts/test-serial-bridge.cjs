@@ -4,11 +4,12 @@ const vm = require('node:vm');
 
 const stateSource = fs.readFileSync('node-red/state.js', 'utf8');
 const now = Date.now();
+const vnToday = new Date(now + 7 * 3600000).toISOString().slice(0,10);
 const state = {
   page: 0, active: true, broker: false, reportedOnline: false, heartbeatAt: null,
   serialOnline: true, serialAt: now - 20000, readings: {},
   device: {lamp:'ON', light:120, lightSensor:'OK', page:2},
-  tasks: [{id:'today', title:'Lịch hiện có', at:now + 3600000, done:false}],
+  tasks: [{id:'today', title:'Lịch hiện có', at:Date.parse(`${vnToday}T12:00:00+07:00`), done:false}],
   history:[], pending:{}, error:'', lastSample:0
 };
 let stored;

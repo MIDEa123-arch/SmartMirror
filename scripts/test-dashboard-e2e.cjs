@@ -19,7 +19,7 @@ const deploy=async nodes=>{
  const server=net.createServer(aedes.handle);await new Promise(r=>server.listen(1884,'127.0.0.1',r));
  let client,browser,timer;
  try {
-   const flow=JSON.parse(saved);const broker=flow.find(n=>n.type==='mqtt-broker');broker.broker='127.0.0.1';broker.port=1884;
+   const flow=JSON.parse(saved);const broker=flow.find(n=>n.type==='mqtt-broker');broker.broker='127.0.0.1';broker.port=1884;broker.usetls=false;broker.verifyservercert=false;broker.tls='';
    await deploy(flow);
    client=await mqtt.connectAsync('mqtt://127.0.0.1:1884');
    await client.subscribeAsync('smartmirror/demo01/cmd/#',{qos:1});
