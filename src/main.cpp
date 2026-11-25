@@ -3,6 +3,7 @@
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <MQTT.h>
+#include <atomic>
 #include <esp_system.h>
 #include <math.h>
 #include <time.h>
@@ -11,6 +12,8 @@
 #include <WebServer.h>
 #endif
 #include "mirror_display.h"
+#include "mirror_lighting.h"
+#include "presence_timer.h"
 #ifdef SMARTMIRROR_WOKWI
 #include <Wire.h>
 #include <Adafruit_FT6206.h>
@@ -20,6 +23,9 @@ Adafruit_FT6206 touchController;
 XPT2046_Touchscreen touchController(16);
 #endif
 #include "emqx_public_ca.h"
+#if defined(SMARTMIRROR_WOKWI) && __has_include("smartmirror_wokwi_private.h")
+#include "smartmirror_wokwi_private.h"
+#endif
 #if !defined(SMARTMIRROR_WOKWI) && __has_include("mosquitto_local_ca.h")
 #include "mosquitto_local_ca.h"
 #endif
@@ -68,12 +74,6 @@ constexpr int DISTANCE_SENSOR_MAX_MM = 4000;
 constexpr int DISTANCE_CONFIRM_SAMPLES = 3;
 constexpr unsigned long MOTION_WINDOW = 3000UL;
 constexpr unsigned long LIGHT_INTERVAL = 250UL;
-constexpr unsigned long LIGHT_STALE_TIMEOUT = 2000UL;
-constexpr int LIGHT_FALLBACK_PWM = 96;
-constexpr int LAMP_FALLBACK_PWM = 128;
-constexpr int LIGHT_MIN_AUTO_PWM = 35;
-constexpr int LIGHT_BRIGHT_ADC = 550;
-constexpr int LIGHT_DARK_ADC = 2500;
 // Cu chi vuot ngang tren man hinh
 constexpr int SWIPE_MIN_DELTA =
 #ifdef SMARTMIRROR_WOKWI
@@ -92,10 +92,16 @@ constexpr unsigned long DISPLAY_INTERVAL = 250UL;
 #ifdef SMARTMIRROR_WOKWI
 const char *WIFI_SSID = "Wokwi-GUEST";
 const char *WIFI_PASSWORD = "";
+#ifdef SMARTMIRROR_WOKWI_MQTT_HOST
+const char *MQTT_SERVER = SMARTMIRROR_WOKWI_MQTT_HOST;
+const char *MQTT_USER = SMARTMIRROR_WOKWI_MQTT_USER;
+const char *MQTT_PASSWORD = SMARTMIRROR_WOKWI_MQTT_PASSWORD;
+#else
 const char *MQTT_SERVER = "broker.emqx.io";
-constexpr int MQTT_PORT = 8883;
 const char *MQTT_USER = "";
 const char *MQTT_PASSWORD = "";
+#endif
+constexpr int MQTT_PORT = 8883;
 #else
 #ifndef SMARTMIRROR_WIFI_SSID
 #define SMARTMIRROR_WIFI_SSID ""
@@ -131,6 +137,9 @@ DHTesp dht;
 WiFiClientSecure mqttTlsClient;
 MQTTClient mqtt(768);
 bool mqttTransportReady = false;
+// The connection worker owns the MQTT client until it reports completion.
+enum class MqttDial { Idle, Connecting, Finished };
+std::atomic<MqttDial> mqttDial{MqttDial::Idle};
 String pendingContent;
 String serialLineBuffer;
 bool pendingContentFromSerial = false;
@@ -144,6 +153,7 @@ float lastHumidity = NAN;
 bool lampOn = false;
 bool mirrorActive = false;
 int distanceStreak = 0;
+bool distanceWakeArmed = true;
 bool pirWasHigh = false;
 bool pirWarmingUp = PIR_WARMUP != 0;
 bool motionPending = false;
@@ -151,11 +161,9 @@ bool touchWasDown = false;
 bool swipeTracking = false;
 int touchStartX = 0;
 int touchLastX = 0;
-bool ambientAvailable = false;
+MirrorLighting lighting;
 bool clockStarted = false;
-float filteredAmbient = 0;
-int autoBrightness = LIGHT_FALLBACK_PWM;
-int autoLampBrightness = 0;
+int lampBrightness = 0;
 int displayBrightness = -1;
 
 unsigned long lastActivityTime = 0;
@@ -165,13 +173,12 @@ unsigned long lastDistanceRead = 0;
 unsigned long lastDistanceSampleAt = 0;
 unsigned long pirStartedAt = 0;
 unsigned long lastMotionAt = 0;
+PresenceTimer presenceTimer;
 unsigned long lastLightRead = 0;
-unsigned long lastValidLightAt = 0;
 unsigned long lastWiFiAttempt = 0;
 unsigned long lastMqttAttempt = 0;
 unsigned long mqttUnavailableAt = 0;
 unsigned long wifiStartedAt = 0;
-unsigned long mqttConnectedAt = 0;
 unsigned long lastHeartbeatAt = 0;
 unsigned long lastSerialHeartbeatAt = 0;
 unsigned long lastDisplayRefresh = 0;
@@ -235,10 +242,15 @@ void loadNetworkSettings()
 }
 #endif
 
+bool mqttOnline()
+{
+  return mqttDial.load() == MqttDial::Idle && mqtt.connected();
+}
+
 // Chi gui MQTT khi dang ket noi Broker
 void sendMQTT(const char *topic, const char *value, bool retained = false, int qos = 0)
 {
-  if (mqtt.connected())
+  if (mqttOnline())
     mqtt.publish(topic, value, retained, qos);
   // Mirror status also travels over the laptop's USB serial bridge. MQTT remains
   // available for Wokwi and optional network operation.
@@ -267,7 +279,7 @@ bool hasFreshTemperature()
 
 bool hasControlConnection()
 {
-  return WiFi.status() == WL_CONNECTED && mqtt.connected();
+  return WiFi.status() == WL_CONNECTED && mqttOnline();
 }
 
 bool hasLocalConnection()
@@ -294,7 +306,7 @@ void sendSerialHeartbeat()
   char value[16];
   snprintf(value, sizeof(value), "%d", displayBrightness);
   sendSerialFrame(TOPIC_STATE_LIGHT, value);
-  sendSerialFrame(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK");
+  sendSerialFrame(TOPIC_STATE_LIGHT_SENSOR, lighting.available() ? "OK" : "FALLBACK");
   snprintf(value, sizeof(value), "%u", displayPage);
   sendSerialFrame(TOPIC_STATE_PAGE, value);
   if (hasFreshTemperature())
@@ -306,67 +318,34 @@ void sendSerialHeartbeat()
   }
 }
 
-// Den guong la ngo ra rieng; gương ngủ thì ngắt đèn để giữ trạng thái an toàn.
-void updateLampBrightness();
-
-void setLamp()
+void applyLighting()
 {
-  updateLampBrightness();
-}
-
-void updateLampBrightness()
-{
-  const int target = ambientAvailable ? autoLampBrightness : LAMP_FALLBACK_PWM;
-  const int level = mirrorActive ? target : 0;
-  const bool on = level > 0;
-  analogWrite(PIN_MIRROR_LAMP, level);
-  if (lampOn != on)
+  const int screenLevel = lighting.screen(mirrorActive);
+  const int lampLevel = lighting.lamp(mirrorActive);
+  const bool wasOn = lampOn;
+  lampOn = lampLevel > 0;
+  if (lampLevel != lampBrightness)
   {
-    lampOn = on;
-    Serial.println(lampOn ? "Den guong: BAT" : "Den guong: TAT");
-    sendMQTT(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF", true);
+    lampBrightness = lampLevel;
+    analogWrite(PIN_MIRROR_LAMP, lampLevel);
   }
-}
-
-// Dieu khien do sang den nen TFT va bao trang thai len Dashboard.
-void updateDisplayBrightness()
-{
-  const int output = mirrorActive ? (ambientAvailable ? autoBrightness : LIGHT_FALLBACK_PWM) : 0;
-  if (output == displayBrightness)
-    return;
-  displayBrightness = output;
-  setMirrorBacklight(static_cast<uint8_t>(displayBrightness));
-  updateLampBrightness();
-  sendNumber(TOPIC_STATE_LIGHT, output, true);
+  if (screenLevel != displayBrightness)
+  {
+    displayBrightness = screenLevel;
+    setMirrorBacklight(screenLevel);
+    sendNumber(TOPIC_STATE_LIGHT, screenLevel, true);
+  }
+  if (lampOn != wasOn)
+    sendMQTT(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF", true);
 }
 
 void readAmbientLight(unsigned long now)
 {
-  const int raw = analogRead(PIN_LIGHT_ANALOG);
-  const bool dark = digitalRead(PIN_LIGHT_DIGITAL) == HIGH;
-  // AO bi keo LOW va DO bi keo HIGH khi module bi rut. Cung bat loi chap
-  // o hai dau ADC neu AO va DO mau thuan, van cho phep toi/sang cuc do.
-  const bool valid = dark ? raw >= 24 : raw <= 4070;
-  const bool hadRecentSample = ambientAvailable && now - lastValidLightAt < LIGHT_STALE_TIMEOUT;
-  if (valid)
-  {
-    lastValidLightAt = now;
-    filteredAmbient = hadRecentSample ? filteredAmbient + (raw - filteredAmbient) * 0.25f : raw;
-    const int adc = constrain(static_cast<int>(filteredAmbient + 0.5f), LIGHT_BRIGHT_ADC, LIGHT_DARK_ADC);
-    const int target = map(adc, LIGHT_DARK_ADC, LIGHT_BRIGHT_ADC, LIGHT_MIN_AUTO_PWM, 255);
-    const int lampTarget = map(adc, LIGHT_BRIGHT_ADC, LIGHT_DARK_ADC, 0, 255);
-    if (abs(lampTarget - autoLampBrightness) >= 4 || lampTarget == 0 || lampTarget == 255)
-      autoLampBrightness = lampTarget;
-    if (!hadRecentSample || abs(target - autoBrightness) >= 4 ||
-        target == LIGHT_MIN_AUTO_PWM || target == 255)
-      autoBrightness = target;
-  }
-  const bool previouslyAvailable = ambientAvailable;
-  ambientAvailable = valid || hadRecentSample;
-  updateDisplayBrightness();
-  updateLampBrightness();
-  if (previouslyAvailable != ambientAvailable)
-    sendMQTT(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK", true);
+  const bool previouslyAvailable = lighting.available();
+  lighting.sample(now, analogRead(PIN_LIGHT_ANALOG), digitalRead(PIN_LIGHT_DIGITAL) == HIGH);
+  applyLighting();
+  if (previouslyAvailable != lighting.available())
+    sendMQTT(TOPIC_STATE_LIGHT_SENSOR, lighting.available() ? "OK" : "FALLBACK", true);
 }
 
 void setMirrorActive(bool active)
@@ -375,12 +354,15 @@ void setMirrorActive(bool active)
     return;
   mirrorActive = active;
   if (active)
+  {
     displayPage = 0;
+    presenceTimer.startTrial(millis());
+    distanceWakeArmed = false;
+  }
   else
     sleepMirrorDisplay();
   Serial.println(active ? "Guong: ACTIVE" : "Guong: SLEEP");
-  setLamp();
-  updateDisplayBrightness();
+  applyLighting();
   sendMQTT(TOPIC_STATE_ACTIVE, active ? "ACTIVE" : "SLEEP", true);
   if (active)
     sendNumber(TOPIC_STATE_PAGE, displayPage);
@@ -403,7 +385,7 @@ void readDHT()
   lastValidTemperatureAt = millis();
   Serial.printf("Nhiet do: %.1f C | Do am: %.1f %%\n",
                 data.temperature, data.humidity);
-  if (mqtt.connected())
+  if (mqttOnline())
   {
     char buffer[16];
     snprintf(buffer, sizeof(buffer), "%.1f", data.temperature);
@@ -416,11 +398,12 @@ void readDHT()
 void requestPage(int direction)
 {
   lastActivityTime = millis();
+  presenceTimer.confirm(lastActivityTime);
   displayPage = (displayPage + DISPLAY_PAGE_COUNT + direction) % DISPLAY_PAGE_COUNT;
   sendNumber(TOPIC_STATE_PAGE, displayPage);
   const char *eventName = direction > 0 ? "NEXT" : "PREV";
   Serial.printf("Touch: %s PAGE\n", eventName);
-  if (!mqtt.connected())
+  if (!mqttOnline())
   {
     Serial.println("Page event khong gui: MQTT offline");
     return;
@@ -489,15 +472,25 @@ void readPresenceDistance()
   if (millimeters < 0)
   {
     distanceStreak = 0;
+    if (now - lastDistanceSampleAt >= DISTANCE_STALE_TIMEOUT)
+      distanceWakeArmed = true;
     return;
   }
   if (now - lastDistanceSampleAt >= 3 * DISTANCE_INTERVAL)
     distanceStreak = 0;
   lastDistanceSampleAt = now;
   if (millimeters > DISTANCE_MAX_MM)
+  {
     distanceStreak = 0;
-  else if (distanceStreak < DISTANCE_CONFIRM_SAMPLES)
-    ++distanceStreak;
+    distanceWakeArmed = true;
+  }
+  else
+  {
+    if (mirrorActive)
+      distanceWakeArmed = false;
+    if (distanceStreak < DISTANCE_CONFIRM_SAMPLES)
+      ++distanceStreak;
+  }
 }
 
 void readMotion(unsigned long now)
@@ -513,6 +506,9 @@ void readMotion(unsigned long now)
   }
   if (rising)
   {
+#ifdef SMARTMIRROR_WOKWI
+    Serial.println("PIR: phat hien chuyen dong");
+#endif
     lastMotionAt = now;
     motionPending = true;
   }
@@ -524,6 +520,9 @@ void confirmPresence(unsigned long now)
     return;
   if (now - lastMotionAt > MOTION_WINDOW)
   {
+#ifdef SMARTMIRROR_WOKWI
+    Serial.println("PIR: HC-SR04 chua xac nhan 3 mau trong pham vi 2 m");
+#endif
     motionPending = false;
     return;
   }
@@ -535,6 +534,7 @@ void confirmPresence(unsigned long now)
   motionPending = false;
   lastActivityTime = now;
   setMirrorActive(true);
+  presenceTimer.confirm(now);
 }
 
 // Nhan lenh MQTT tu Node-RED
@@ -591,6 +591,19 @@ void readLaptopSerial()
   }
 }
 
+void dialMqtt(void *)
+{
+  {
+    String clientId = "smartmirror-esp32-";
+    clientId += WiFi.macAddress();
+    clientId.replace(":", "");
+    mqtt.connect(clientId.c_str(), MQTT_USER[0] ? MQTT_USER : nullptr,
+                 MQTT_USER[0] ? MQTT_PASSWORD : nullptr);
+  }
+  mqttDial.store(MqttDial::Finished);
+  vTaskDelete(nullptr);
+}
+
 // Ket noi mang: thu lai theo chu ky, khong co vong while vo han
 void maintainConnections(unsigned long now)
 {
@@ -635,7 +648,7 @@ void maintainConnections(unsigned long now)
   if (!mqttTransportReady)
     return;
 
-  if (!mqtt.connected())
+  if (!mqttOnline())
   {
     if (!mqttUnavailableAt) mqttUnavailableAt = now ? now : 1;
 #ifndef SMARTMIRROR_WOKWI
@@ -645,23 +658,11 @@ void maintainConnections(unsigned long now)
   }
   else mqttUnavailableAt = 0;
 
-  if (!mqtt.connected() && now - lastMqttAttempt >= MQTT_RETRY)
+  if (mqttDial.load() == MqttDial::Finished)
   {
+    mqttDial.store(MqttDial::Idle);
     lastMqttAttempt = now;
-    // TLS certificate validation needs a synchronized wall clock. Keep the
-    // mirror sensors/serial path alive while NTP is unavailable, but fail closed
-    // for MQTT rather than accepting an unverifiable broker certificate.
-    if (time(nullptr) < 1700000000)
-    {
-      Serial.println("MQTT TLS attend la synchronisation NTP");
-      return;
-    }
-    String clientId = "smartmirror-esp32-";
-    clientId += WiFi.macAddress();
-    clientId.replace(":", "");
-
-    if (mqtt.connect(clientId.c_str(), MQTT_USER[0] ? MQTT_USER : nullptr,
-                     MQTT_USER[0] ? MQTT_PASSWORD : nullptr))
+    if (mqttOnline())
     {
       mqttUnavailableAt = 0;
       Serial.println("MQTT da ket noi");
@@ -670,17 +671,35 @@ void maintainConnections(unsigned long now)
       sendMQTT(TOPIC_STATE_LAMP, lampOn ? "ON" : "OFF", true);
       sendMQTT(TOPIC_STATE_ACTIVE, mirrorActive ? "ACTIVE" : "SLEEP", true);
       sendNumber(TOPIC_STATE_LIGHT, displayBrightness, true);
-      sendMQTT(TOPIC_STATE_LIGHT_SENSOR, ambientAvailable ? "OK" : "FALLBACK", true);
+      sendMQTT(TOPIC_STATE_LIGHT_SENSOR, lighting.available() ? "OK" : "FALLBACK", true);
       sendMQTT(TOPIC_STATUS, "online", true, 1);
       sendNumber(TOPIC_STATE_PAGE, displayPage);
     }
     else
-    {
       Serial.printf("MQTT loi: %d\n", mqtt.lastError());
+  }
+
+  if (mqttDial.load() == MqttDial::Idle && !mqttOnline() &&
+      now - lastMqttAttempt >= MQTT_RETRY)
+  {
+    lastMqttAttempt = now;
+    // TLS certificate validation needs a synchronized wall clock. Keep the
+    // mirror sensors/serial path alive while NTP is unavailable, but fail closed
+    // for MQTT rather than accepting an unverifiable broker certificate.
+    if (time(nullptr) < 1700000000)
+    {
+      Serial.println("MQTT TLS dang cho dong bo gio NTP");
+      return;
+    }
+    mqttDial.store(MqttDial::Connecting);
+    if (xTaskCreate(dialMqtt, "mqtt-dial", 12288, nullptr, 1, nullptr) != pdPASS)
+    {
+      mqttDial.store(MqttDial::Idle);
+      Serial.println("MQTT: khong khoi dong duoc tac vu ket noi");
     }
   }
 
-  if (mqtt.connected())
+  if (mqttOnline())
   {
     mqtt.loop();
     if (now - lastHeartbeatAt >= HEARTBEAT_INTERVAL)
@@ -721,12 +740,14 @@ void setup()
   analogSetPinAttenuation(PIN_LIGHT_ANALOG, ADC_11db);
   digitalWrite(PIN_MIRROR_LAMP, LOW);
   beginMirrorDisplay();
-  updateDisplayBrightness();
+  applyLighting();
 
   snprintf(bootId, sizeof(bootId), "%08lx%08lx",
            static_cast<unsigned long>(esp_random()), static_cast<unsigned long>(esp_random()));
   if (MQTT_SERVER[0] && MQTT_CA_CERT[0])
   {
+    mqttTlsClient.setTimeout(5);
+    mqttTlsClient.setHandshakeTimeout(8);
     mqttTlsClient.setCACert(MQTT_CA_CERT);
     mqtt.begin(MQTT_SERVER, MQTT_PORT, mqttTlsClient);
     mqttTransportReady = true;
@@ -770,7 +791,10 @@ void loop()
     readPresenceDistance();
   }
   confirmPresence(millis());
-  if (mirrorActive && distanceStreak >= DISTANCE_CONFIRM_SAMPLES)
+  if (!mirrorActive && distanceWakeArmed && distanceStreak >= DISTANCE_CONFIRM_SAMPLES)
+    setMirrorActive(true);
+  if (mirrorActive && distanceStreak >= DISTANCE_CONFIRM_SAMPLES &&
+      millis() - lastDistanceSampleAt < 2 * DISTANCE_INTERVAL)
     lastActivityTime = millis();
   maintainConnections(now);
   if (millis() - lastDhtRead >= DHT_INTERVAL)
@@ -793,6 +817,7 @@ void loop()
   // Dung 'now' dau vong lap co the gay tran phep tru unsigned.
   const unsigned long sleepCheckTime = millis();
   if (mirrorActive && (sleepCheckTime - lastActivityTime >= SLEEP_TIMEOUT ||
+                       presenceTimer.expired(sleepCheckTime) ||
                        sleepCheckTime - lastDistanceSampleAt >= DISTANCE_STALE_TIMEOUT))
   {
     setMirrorActive(false);

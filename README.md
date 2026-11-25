@@ -139,7 +139,7 @@ Script chạy riêng đã có cấu hình này sẵn. Không chạy song song ha
 
 ## Danh sách thiết bị cần mua để lắp thật
 
-Danh sách này theo đúng sơ đồ hiện tại: ESP32 DevKit V1/WROOM, TFT SPI ILI9488 3,5 inch + XPT2046, HC-SR04 + PIR để xác nhận người trong phạm vi khoảng 2 m, LDR để tự chỉnh đèn và màn hình, DHT22, và đèn LED gương điều khiển PWM. Các phiên bản màn hình khác giao tiếp (RGB/parallel) hoặc cảm ứng điện dung không khớp wiring/firmware hiện tại.
+DHT22 đo nhiệt độ và độ ẩm để hiển thị trên TFT và điện thoại. Mạch có hai ngõ chiếu sáng độc lập, một cho đèn nền TFT và một cho dải LED soi mặt.
 
 | SL | Thiết bị | Yêu cầu khi mua |
 | ---: | --- | --- |
@@ -155,10 +155,12 @@ Danh sách này theo đúng sơ đồ hiện tại: ESP32 DevKit V1/WROOM, TFT S
 | 1 bộ | Điện trở và dây nối | 1 kΩ + 1,5 kΩ chia áp ECHO; 10 kΩ kéo lên DHT22 rời; 100 kΩ kéo xuống GPIO34; 100–220 Ω nối cổng MOSFET và 10 kΩ kéo cổng xuống GND nếu dùng MOSFET rời. Mua bộ điện trở 1/4 W là tiện nhất. |
 | 1 bộ | Dây USB dữ liệu và dây jumper | Một cáp USB dữ liệu điện thoại–laptop; một cáp USB dữ liệu ESP32–laptop, đúng đầu cắm của bo. Dây Dupont theo đầu đực/cái của module. |
 | 1 | Breadboard để ráp thử | Nên dùng khi dựng và kiểm tra nguyên mẫu. Khi lắp cố định, chuyển sang PCB/perfboard hoặc đầu nối bắt vít và hộp cách điện; không để mạch treo bằng dây jumper. |
+| 1 bộ nếu làm cả mặt gương | Gương bán phản xạ và khung gá | Thử độ đọc của TFT qua kính ở cả phòng sáng và tối trước khi chốt kính. Chừa cửa cho PIR, hai đầu siêu âm và cảm ứng điện trở nếu cần vuốt trực tiếp. Đặt DHT22 ở vị trí thông thoáng, LDR hướng ra phòng và tránh ánh sáng trực tiếp từ dải LED. |
+| 1 nếu TFT cần | Driver đèn nền có ngõ PWM 3,3 V | Chọn theo sơ đồ và dòng LED của module TFT. Nếu module đã có ngõ DIM/EN nhận PWM 3,3 V thì dùng ngõ đó. Driver của dải LED soi mặt dùng riêng. |
 
 **Có thể cần thêm:** bộ hạ áp ổn định 5 V xuống 3,3 V dòng phù hợp nếu module TFT yêu cầu nguồn 3,3 V riêng hoặc tổng tải vượt khả năng chân 3V3 trên DevKit. Không đoán chân VCC/LED của TFT theo tên ILI9488 vì cách làm mạch nguồn khác nhau giữa các phiên bản. Không cấp 5 V vào GPIO ESP32; không nối hai nguồn 5 V riêng vào cùng bo khi cáp USB dữ liệu còn cấp nguồn nếu chưa có cách chống cấp ngược.
 
-Để chạy app đúng mô hình đã chọn, điện thoại và ESP32 cần **hai cáp dữ liệu riêng** tới laptop. Điện thoại phải được cho phép Gỡ lỗi USB; ESP32 dùng cổng COM. Cảm biến/driver có thể dùng chung đường nguồn và GND phù hợp, nhưng không gộp nhiều tín hiệu vào một GPIO: chỉ SCK/MOSI SPI được dùng chung, mỗi thiết bị có chân CS riêng.
+Khi thử app trên điện thoại qua USB, dùng cáp dữ liệu điện thoại–laptop và bật Gỡ lỗi USB. Nếu ESP32 truyền dữ liệu bằng MQTT/TLS qua Wi-Fi, có thể cấp nguồn cho bo bằng USB từ laptop hoặc bộ nguồn USB phù hợp. Cáp dữ liệu ESP32 cần khi nạp firmware hoặc chạy chế độ USB/COM. Các module dùng chung GND. TFT và cảm ứng dùng chung SCK/MOSI trên bus SPI, mỗi thiết bị có chân CS riêng.
 
 ## Mạch và firmware
 
@@ -166,7 +168,13 @@ Danh sách này theo đúng sơ đồ hiện tại: ESP32 DevKit V1/WROOM, TFT S
 
 Wokwi dùng màn ILI9341 320 × 240 có FT6206 cảm ứng điện dung trên I²C. Màn thật dự kiến là ILI9488 3,5 inch 480 × 320 có XPT2046 cảm ứng điện trở trên SPI. Firmware chọn đúng bộ điều khiển theo build profile; cả hai thao tác vuốt ngang để đổi ba trang Tổng quan, Thời tiết và Lịch hôm nay. Wokwi mô phỏng màn hình 2,8 inch và FT6206, không phải kích thước hay loại cảm ứng của module thật.
 
-Khi PIR báo chuyển động và HC-SR04 xác nhận người ở trong 2 m, gương bật. Đèn gương chỉ sáng khi có người và LDR nhận thấy phòng tối; nó tự tăng sáng khi tối hơn. Cùng cảm biến đó điều chỉnh đèn nền TFT: phòng sáng thì màn hình sáng hơn, phòng tối thì màn hình giảm sáng để dễ nhìn. Gương ngủ thì cả đèn gương và màn hình đều tắt. Nếu LDR hỏng hoặc bị rút, firmware dùng mức dự phòng thay vì giữ PWM cũ. Khi người rời khỏi vùng đo, gương tắt sau 30 giây; nếu HC-SR04 mất dữ liệu, gương tắt theo ngưỡng stale 10 giây.
+TFT bật khi HC-SR04 xác nhận ba mẫu liên tiếp trong vùng 2–200 cm, kể cả khi lúc khởi động chưa có tiếng vọng. Sau khi gương ngủ, chế độ tự bật theo khoảng cách được kích hoạt lại khi đo được ngoài 2 m hoặc mất tiếng vọng hợp lệ ít nhất 10 giây. Nếu vật vẫn ở trong vùng, có thể quơ tay để PIR đánh thức gương. Khi gương thức, đèn nền TFT tự chỉnh từ khoảng 25% đến 100% PWM theo ánh sáng phòng. Đây là mức điều khiển điện, độ sáng nhìn qua kính phụ thuộc vào TFT và loại kính.
+
+Đèn soi mặt dùng ngưỡng tối chỉnh được bằng biến trở trên module LDR. Firmware đọc DO mỗi 250 ms và cần ba mẫu cùng xác nhận thay đổi trước khi bật hoặc tắt đèn soi. Khi phòng tối, đèn soi tăng sáng theo AO. Khi gương ngủ, cả hai ngõ PWM đều về 0. Nếu mất tín hiệu LDR hợp lệ trong 2 giây, gương đang thức giữ TFT ở khoảng 38% và tắt đèn soi. Khi có lại mẫu hợp lệ, điều khiển tự động tiếp tục. Sau khi khoảng cách ra ngoài vùng đo 30 giây, gương ngủ. Nếu HC-SR04 mất mẫu hợp lệ liên tục 10 giây, gương cũng ngủ.
+
+Để thử trong Wokwi, đặt HC-SR04 ở 150 cm rồi bấm **Simulate Motion** trên PIR. Chỉnh LDR lần lượt lên **1.000 lux** rồi xuống **10 lux** và chờ khoảng hai giây ở mỗi mức. TFT phải hiển thị thông tin cả hai lần. LED trắng biểu diễn đèn nền TFT, LED xanh dương biểu diễn đèn soi. Khi chuyển từ sáng sang tối, LED trắng giảm sáng và LED xanh dương bật. Trên điện thoại, trạng thái tự cập nhật khoảng 5 giây một lần khi ứng dụng ở phía trước và đã ghép nối.
+
+Khi chỉ có tín hiệu khoảng cách, gương sáng thử 30 giây. Nếu PIR báo chuyển động khi HC-SR04 xác nhận có vật trong vùng, hoặc người dùng vuốt đổi trang trên TFT, gương chuyển sang chế độ sử dụng. Mỗi lần xác nhận như vậy tính lại thời hạn 10 phút. Hết thời hạn, gương ngủ dù vật vẫn ở trong vùng. Có thể quơ tay trước PIR để đánh thức lại.
 
 Lịch hoạt động được nhập trong ứng dụng lịch ưu tiên điện thoại, có lịch tháng, chọn ngày, thêm/sửa/xóa hoạt động và đánh dấu hoàn thành. Node-RED chạy nền để lưu lịch; Wokwi đồng bộ qua MQTT/TLS, còn bản nối thật chuyển lịch qua USB/COM. Giao diện Node-RED không còn dùng để bật/tắt đèn hoặc chỉnh độ sáng. Khi gương bật, lịch của ngày hiện tại hiện trên màn hình và trên trang gương. Tệp lịch lưu trong context `localfilesystem` của Node-RED.
 
@@ -232,7 +240,13 @@ ESP32 vẫn cắm USB vào laptop để lấy điện; khi chạy chế độ MQ
 4. Khởi động broker riêng cùng Node-RED: `powershell -ExecutionPolicy Bypass -File scripts/start-dashboard.ps1 -PrivateMqtt -ReloadFlow`.
 5. Build `esp32dev-hardware` sau bước 2 để firmware tin CA riêng. Lần đầu, gương tạo Wi‑Fi `SmartMirror-…`; mật khẩu hiện trong Serial Monitor. Kết nối điện thoại/laptop vào điểm truy cập đó rồi mở `http://192.168.4.1`, nhập Wi‑Fi, IPv4 laptop, tên người dùng và mật khẩu trong tệp runtime ở bước 2.
 
-Khi đổi Wi‑Fi, thiết bị thử kết nối lại rồi mở điểm truy cập cấu hình sau khoảng 45 giây; lưu mạng mới trong bộ nhớ ESP32 nên không phải nạp firmware lại. Nếu laptop nhận IPv4 mới, chạy lại bước 1 với IP mới, chạy `scripts/start-private-mqtt.ps1 -Restart`, khởi động lại Node-RED bằng bước 3 và cập nhật IP broker trên trang cấu hình của gương. Đặt DHCP reservation cho laptop trên router sẽ tránh đổi IP thường xuyên. Wokwi không truy cập broker riêng trên laptop qua mạng nội bộ; chạy chế độ Wokwi bình thường để dùng broker demo công cộng.
+Khi đổi Wi‑Fi, thiết bị thử kết nối lại rồi mở điểm truy cập cấu hình sau khoảng 45 giây; lưu mạng mới trong bộ nhớ ESP32 nên không phải nạp firmware lại. Nếu laptop nhận IPv4 mới, chạy lại bước 2 với IP mới, chạy `scripts/start-private-mqtt.ps1 -Restart`, khởi động lại Node-RED bằng bước 4 và cập nhật IP broker trên trang cấu hình của gương. Đặt DHCP reservation cho laptop trên router sẽ tránh đổi IP thường xuyên.
+
+#### Wokwi trong VS Code với broker riêng
+
+Sau khi tạo chứng chỉ bằng bước 2, chạy `node scripts/configure-wokwi-mqtt.cjs private` và build lại `esp32dev`. Khởi động backend bằng bước 4, rồi dừng và chạy lại **Wokwi: Start Simulator** trong VS Code. Gateway tích hợp của tiện ích chuyển kết nối `host.wokwi.internal:8883` tới Mosquitto trên laptop. Giữ tab mô phỏng hiển thị trong khi thử.
+
+Firmware riêng chứa thông tin đăng nhập MQTT. Giữ tệp build đó trên laptop. Để quay lại EMQX cho mô phỏng trên trình duyệt dùng gateway công cộng, chạy `node scripts/configure-wokwi-mqtt.cjs public`, build lại và chạy backend với `-ReloadFlow` mà không thêm `-PrivateMqtt`.
 
 ## Sửa source và kiểm tra
 

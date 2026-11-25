@@ -233,24 +233,25 @@ void showMirrorDisplay(uint8_t page, const DisplayStatus &status)
   if (page == 0)
   {
     rows[0] = localDate(utc, "%H:%M   %d/%m/%Y");
-    rows[1] = "Lịch hoạt động hôm nay";
-    uint8_t row = 2;
+    rows[1] = status.sensorFresh
+        ? "Trong phòng  " + String(status.temperature, 1) + " °C   " + String(status.humidity, 0) + " %"
+        : "Trong phòng  -- °C   -- %";
+    rows[2] = "Lịch hoạt động hôm nay";
     if (!fresh)
-      rows[row++] = "Đang tải lịch hôm nay";
+      rows[3] = "Đang tải lịch hôm nay";
     else if (!content.privateTasks)
-      rows[row++] = "Chưa nhận lịch hôm nay";
+      rows[3] = "Chưa nhận lịch hôm nay";
     else
     {
-      for (uint8_t i = 0; i < content.taskCount && row < ROWS; ++i)
+      rows[3] = "Không có hoạt động sắp tới";
+      for (uint8_t i = 0; i < content.taskCount; ++i)
       {
         const auto &task = content.tasks[i];
         if (utc && task.at < utc - 60) continue;
-        rows[row++] = localDate(task.at, "%H:%M") + "  " + task.title;
+        rows[3] = localDate(task.at, "%H:%M") + "  " + task.title;
+        break;
       }
-      if (row == 2) rows[row++] = "Hôm nay chưa có hoạt động";
     }
-    while (row < ROWS)
-      rows[row++] = "Nhiệt độ  " + (status.sensorFresh ? String(status.temperature, 1) + " °C" : String("--"));
     footer = status.online ? "Vuốt trái / phải để đổi trang" : "Ngoại tuyến  |  Vuốt để đổi trang";
   }
   else if (page == 1)

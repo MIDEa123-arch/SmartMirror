@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -43,7 +45,7 @@ class CalendarScreen extends StatefulWidget {
   State<CalendarScreen> createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObserver {
   static const _secureStorage = FlutterSecureStorage();
   late DateTime _today;
   late DateTime _selectedDay;
@@ -63,10 +65,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
   bool _loading = true;
   bool _busy = false;
   String? _error;
+  Timer? _refreshTimer;
+  int _requestId = 0;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _today = _vietnamNow();
     _selectedDay = _today;
     _visibleMonth = DateTime.utc(_today.year, _today.month);
@@ -84,25 +89,41 @@ class _CalendarScreenState extends State<CalendarScreen> {
     await _refresh();
   }
 
-  Future<void> _refresh() async {
-    setState(() {
-      _loading = _events.isEmpty;
-      _error = null;
-    });
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _refreshTimer?.cancel();
+    if (state == AppLifecycleState.resumed && _api != null) {
+      _refresh(quiet: true);
+    }
+  }
+
+  Future<void> _refresh({bool quiet = false}) async {
+    final api = _api;
+    if (api == null) return;
+    _refreshTimer?.cancel();
+    final requestId = ++_requestId;
+    if (!quiet) setState(() => _loading = _events.isEmpty);
     try {
-      final snapshot = await _api!.fetchSnapshot();
-      if (!mounted) return;
+      final snapshot = await api.fetchSnapshot();
+      if (!mounted || requestId != _requestId) return;
       setState(() {
+        _error = null;
         _events = snapshot.events;
         _mirror = snapshot.mirror;
       });
     } catch (error) {
-      if (!mounted) return;
+      if (!mounted || requestId != _requestId) return;
       setState(
         () => _error = error.toString().replaceFirst('HttpException: ', ''),
       );
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && requestId == _requestId) {
+        if (_loading) setState(() => _loading = false);
+        if (_pairingCode.isNotEmpty &&
+            WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+          _refreshTimer = Timer(const Duration(seconds: 5), () => _refresh(quiet: true));
+        }
+      }
     }
   }
 
@@ -309,6 +330,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _refreshTimer?.cancel();
     _api?.close();
     super.dispose();
   }
@@ -416,21 +439,23 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   Widget _deviceStatus() {
-    final title = !_mirror.online
+    final online = _error == null && _mirror.online;
+    final title = _error != null ? 'Chưa cập nhật được trạng thái gương' : !online
         ? 'Gương chưa kết nối'
         : _mirror.active
             ? 'Gương đang hoạt động'
             : 'Gương đang chờ';
-    final color = _mirror.online ? _teal : const Color(0xFF9A6A35);
-    final lamp = !_mirror.online
+    final color = online ? _teal : const Color(0xFF9A6A35);
+    final lamp = !online
         ? '—'
         : _mirror.lamp == 'ON'
         ? 'Đang sáng'
         : _mirror.lamp == 'OFF'
             ? 'Đang tắt'
             : 'Chưa có dữ liệu';
-    final brightness = !_mirror.online || _mirror.screenBrightness == null
+    final brightness = !online || _mirror.screenBrightness == null
         ? '—'
+        : _mirror.screenBrightness == 0 ? 'Đang tắt'
         : '${(_mirror.screenBrightness! * 100 / 255).round()}%';
     return Card(
       child: Padding(
@@ -439,10 +464,10 @@ class _CalendarScreenState extends State<CalendarScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(children: [
-              Icon(_mirror.online ? Icons.devices_rounded : Icons.devices_outlined, color: color),
+              Icon(online ? Icons.devices_rounded : Icons.devices_outlined, color: color),
               const SizedBox(width: 10),
               Expanded(child: Text(title, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color))),
-              if (_mirror.online) const Icon(Icons.circle, size: 9, color: Color(0xFF3B9A70)),
+              if (online) const Icon(Icons.circle, size: 9, color: Color(0xFF3B9A70)),
             ]),
             const SizedBox(height: 13),
             Row(children: [
@@ -450,7 +475,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
               const SizedBox(width: 8),
               Expanded(child: _statusValue('Màn hình · tự chỉnh', brightness, Icons.wb_sunny_outlined)),
             ]),
-            if (_mirror.temperature != null || _mirror.humidity != null) ...[
+            if (online) ...[
               const Divider(height: 22),
               Row(children: [
                 Expanded(child: _statusValue('Nhiệt độ', _mirror.temperature == null ? '—' : '${_mirror.temperature!.toStringAsFixed(1)} °C', Icons.thermostat_outlined)),
@@ -458,8 +483,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 Expanded(child: _statusValue('Độ ẩm', _mirror.humidity == null ? '—' : '${_mirror.humidity!.toStringAsFixed(0)}%', Icons.water_drop_outlined)),
               ]),
             ],
-            if (_mirror.lightSensor == 'FALLBACK')
-              const Padding(padding: EdgeInsets.only(top: 10), child: Text('Cảm biến ánh sáng cần được kiểm tra.', style: TextStyle(color: Color(0xFF9A6A35), fontSize: 12))),
+            if (online)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: Text(
+                  _mirror.lightSensor == 'FALLBACK'
+                      ? 'Kiểm tra cảm biến ánh sáng. Khi gương thức, màn hình dùng độ sáng dự phòng và đèn soi tắt.'
+                      : 'Màn hình bật khi bạn đến gần và tự chỉnh độ sáng. Đèn soi chỉ sáng khi gương thức và phòng tối.',
+                  style: TextStyle(color: _mirror.lightSensor == 'FALLBACK' ? const Color(0xFF9A6A35) : _muted, fontSize: 12),
+                ),
+              ),
           ],
         ),
       ),

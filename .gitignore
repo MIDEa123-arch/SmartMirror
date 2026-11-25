@@ -8,3 +8,4 @@ compile_commands.json
 node_modules/
 /include/smartmirror_secrets.h
 /include/mosquitto_local_ca.h
+/include/smartmirror_wokwi_private.h
