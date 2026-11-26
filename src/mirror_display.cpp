@@ -1,7 +1,11 @@
 #include "mirror_display.h"
 
 #include <ArduinoJson.h>
+#ifdef SMARTMIRROR_PANEL_S3
+#include <LGFX_ES3C35P.hpp>
+#else
 #include <TFT_eSPI.h>
+#endif
 #include <math.h>
 #include <time.h>
 #include "mirror_font.h"
@@ -51,7 +55,13 @@ struct Content
   Reminder tasks[MAX_TASKS];
 };
 
+#ifdef SMARTMIRROR_PANEL_S3
+LGFX lcd;
+LGFX_Sprite screen(&lcd);
+bool panelReady = false;
+#else
 TFT_eSPI screen;
+#endif
 Content content;
 String renderedRows[ROWS];
 String renderedFooter;
@@ -95,15 +105,15 @@ String fitText(String line, int width)
   return line + "...";
 }
 
-void renderPage(uint8_t page)
+void renderPage(uint8_t page, bool debug)
 {
   static const char *titles[DISPLAY_PAGE_COUNT] = { "Tổng quan", "Thời tiết", "Lịch và nhắc việc" };
   screen.fillScreen(BACKGROUND);
   screen.fillRect(0, 0, screen.width(), 38, PANEL);
-  screen.setTextColor(ACCENT, PANEL, true);
-  screen.drawString(titles[page], 12, 8);
+  screen.setTextColor(ACCENT, PANEL);
+  screen.drawString(debug ? "Kiểm tra thiết bị" : titles[page], 12, 8);
   screen.setTextDatum(TR_DATUM);
-  screen.drawString(String(page + 1) + "/3", screen.width() - 12, 8);
+  if (!debug) screen.drawString(String(page + 1) + "/3", screen.width() - 12, 8);
   screen.setTextDatum(TL_DATUM);
 }
 
@@ -117,7 +127,7 @@ void renderRows(const String (&rows)[ROWS], const String &footer, bool redraw)
     renderedRows[i] = rows[i];
     const int top = 48 + i * rowSpacing;
     screen.fillRoundRect(10, top, screen.width() - 20, rowSpacing - 5, 5, PANEL);
-    screen.setTextColor(TEXT, PANEL, true);
+    screen.setTextColor(TEXT, PANEL);
     screen.drawString(fitText(rows[i], screen.width() - 38), 18, top + 6);
   }
   if (redraw || renderedFooter != footer)
@@ -125,7 +135,7 @@ void renderRows(const String (&rows)[ROWS], const String &footer, bool redraw)
     renderedFooter = footer;
     const int top = screen.height() - 25;
     screen.fillRect(0, top, screen.width(), 25, BACKGROUND);
-    screen.setTextColor(MUTED, BACKGROUND, true);
+    screen.setTextColor(MUTED, BACKGROUND);
     screen.drawString(fitText(footer, screen.width() - 22), 12, top);
   }
 }
@@ -157,7 +167,7 @@ void fillWeather(String (&rows)[ROWS], String &footer, bool fresh, unsigned long
     rows[2] = "Nhiệt độ  " + String(content.weatherTemp, 1) + " °C";
     rows[3] = "Độ ẩm  " + String(content.weatherHumidity) + " %";
   }
-  footer = "Chạm để đổi trang";
+  footer = "Vuốt trái / phải để đổi trang";
 }
 
 void fillReminders(String (&rows)[ROWS], String &footer, bool fresh, time_t utc)
@@ -186,13 +196,28 @@ void fillReminders(String (&rows)[ROWS], String &footer, bool fresh, time_t utc)
 
 void beginMirrorDisplay()
 {
+#ifdef SMARTMIRROR_PANEL_S3
+  if (!lcd.init()) return;
+  lcd.setBrightness(0);
+  lcd.setRotation(0);
+  screen.setPsram(true);
+  if (!screen.createSprite(lcd.width(), lcd.height())) {
+    Serial.println("Display framebuffer allocation failed");
+    return;
+  }
+  screen.setRotation(1);
+  panelReady = true;
+#else
   pinMode(BACKLIGHT_PIN, OUTPUT);
   digitalWrite(BACKLIGHT_PIN, BACKLIGHT_OFF ? HIGH : LOW);
   screen.init();
   screen.setRotation(1);
+#endif
   screen.setTextWrap(false);
   screen.loadFont(MirrorFont);
+#ifndef SMARTMIRROR_PANEL_S3
   screen.writecommand(TFT_DISPOFF);
+#endif
 #ifdef SMARTMIRROR_WOKWI
   screen.fillScreen(TFT_BLACK);
 #endif
@@ -204,7 +229,11 @@ void setMirrorBacklight(uint8_t brightness)
   const int output = SMARTMIRROR_BACKLIGHT_ACTIVE_HIGH ? level : 255 - level;
   if (output == lastBacklight)
     return;
+#ifdef SMARTMIRROR_PANEL_S3
+  lcd.setBrightness(output);
+#else
   analogWrite(BACKLIGHT_PIN, output);
+#endif
   lastBacklight = output;
 }
 
@@ -214,7 +243,9 @@ void sleepMirrorDisplay()
     return;
   displayAwake = false;
   setMirrorBacklight(0);
+#ifndef SMARTMIRROR_PANEL_S3
   screen.writecommand(TFT_DISPOFF);
+#endif
 #ifdef SMARTMIRROR_WOKWI
   screen.fillScreen(TFT_BLACK);
 #endif
@@ -223,6 +254,9 @@ void sleepMirrorDisplay()
 
 void showMirrorDisplay(uint8_t page, const DisplayStatus &status)
 {
+#ifdef SMARTMIRROR_PANEL_S3
+  if (!panelReady) return;
+#endif
   page %= DISPLAY_PAGE_COUNT;
   const unsigned long now = millis();
   const auto utc = currentTime(now);
@@ -230,7 +264,29 @@ void showMirrorDisplay(uint8_t page, const DisplayStatus &status)
   const bool fresh = content.sentAt && elapsed < CONTENT_EXPIRY;
   String rows[ROWS];
   String footer;
-  if (page == 0)
+  if (status.debug)
+  {
+    if (status.controllerConnected)
+    {
+      rows[0] = status.distanceMm < 0 ? "HC-SR04  Chưa có ECHO" :
+                "HC-SR04  " + String(status.distanceMm / 10.0f, 1) + " cm";
+      rows[1] = status.motion ? "PIR  HIGH" : "PIR  LOW";
+      rows[2] = "LDR  AO " + String(status.lightRaw) + (status.dark ? "  DO HIGH" : "  DO LOW");
+      rows[3] = status.sensorFresh ?
+                "DHT  " + String(status.temperature, 1) + " C   " + String(status.humidity, 0) + " %" :
+                "DHT  Chưa có số đo";
+      footer = status.lampOn ? "UART OK  |  LED ON" : "UART OK  |  LED OFF";
+    }
+    else
+    {
+      rows[0] = "Chưa nhận dữ liệu từ DevKit";
+      rows[1] = "DevKit P17 sang RXD màn";
+      rows[2] = "DevKit P16 sang TXD màn";
+      rows[3] = "Nối GND chung";
+      footer = "Đang chờ UART";
+    }
+  }
+  else if (page == 0)
   {
     rows[0] = localDate(utc, "%H:%M   %d/%m/%Y");
     rows[1] = status.sensorFresh
@@ -261,14 +317,29 @@ void showMirrorDisplay(uint8_t page, const DisplayStatus &status)
 
   if (!displayAwake)
   {
+#ifndef SMARTMIRROR_PANEL_S3
     screen.writecommand(TFT_DISPON);
+#endif
     displayAwake = true;
   }
-  const bool redraw = renderedPage != page;
+  const int screenPage = status.debug ? DISPLAY_PAGE_COUNT : page;
+  const bool redraw = renderedPage != screenPage;
+#ifdef SMARTMIRROR_PANEL_S3
+  bool changed = redraw || renderedFooter != footer;
+  for (unsigned i = 0; i < ROWS; ++i)
+    changed |= renderedRows[i] != rows[i];
+  if (!changed) return;
+#endif
   if (redraw)
-    renderPage(page);
+    renderPage(page, status.debug);
   renderRows(rows, footer, redraw);
-  renderedPage = page;
+#ifdef SMARTMIRROR_PANEL_S3
+  // The ST77922 accepts the native portrait pixel order. Rotate in RAM.
+  screen.setRotation(0);
+  screen.pushSprite(0, 0);
+  screen.setRotation(1);
+#endif
+  renderedPage = screenPage;
 }
 
 bool receiveMirrorContent(const String &payload)
@@ -325,3 +396,14 @@ bool receiveMirrorContent(const String &payload)
   content = next;
   return true;
 }
+
+#ifdef SMARTMIRROR_PANEL_S3
+bool readPanelTouch(int32_t &x, int32_t &y)
+{
+  int32_t nativeX, nativeY;
+  if (!panelReady || !lcd.getTouch(&nativeX, &nativeY)) return false;
+  x = nativeY;
+  y = lcd.width() - 1 - nativeX;
+  return true;
+}
+#endif

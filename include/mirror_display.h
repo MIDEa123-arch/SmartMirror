@@ -7,11 +7,22 @@ constexpr size_t DISPLAY_DATA_LIMIT = 640;
 
 struct DisplayStatus
 {
+  DisplayStatus(float temperature = 0, float humidity = 0, bool sensorFresh = false,
+                bool lampOn = false, bool online = false)
+      : temperature(temperature), humidity(humidity), sensorFresh(sensorFresh),
+        lampOn(lampOn), online(online) {}
+
   float temperature;
   float humidity;
   bool sensorFresh;
   bool lampOn;
   bool online;
+  bool debug = false;
+  int distanceMm = -1;
+  int lightRaw = -1;
+  bool dark = false;
+  bool motion = false;
+  bool controllerConnected = true;
 };
 
 void beginMirrorDisplay();

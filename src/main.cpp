@@ -18,7 +18,7 @@
 #include <Wire.h>
 #include <Adafruit_FT6206.h>
 Adafruit_FT6206 touchController;
-#else
+#elif !defined(SMARTMIRROR_PANEL_UART)
 #include <XPT2046_Touchscreen.h>
 XPT2046_Touchscreen touchController(16);
 #endif
@@ -69,7 +69,7 @@ constexpr unsigned long DISTANCE_INTERVAL = 150UL;
 constexpr unsigned long DISTANCE_STALE_TIMEOUT = 10000UL;
 constexpr unsigned long ECHO_TIMEOUT = 25000UL;
 constexpr int DISTANCE_MIN_MM = 20;
-constexpr int DISTANCE_MAX_MM = 2000;
+constexpr int DISTANCE_MAX_MM = 1000;
 constexpr int DISTANCE_SENSOR_MAX_MM = 4000;
 constexpr int DISTANCE_CONFIRM_SAMPLES = 3;
 constexpr unsigned long MOTION_WINDOW = 3000UL;
@@ -88,6 +88,12 @@ constexpr unsigned long WIFI_RETRY = 10000UL;
 constexpr unsigned long MQTT_RETRY = 5000UL;
 constexpr unsigned long HEARTBEAT_INTERVAL = 5000UL;
 constexpr unsigned long DISPLAY_INTERVAL = 250UL;
+#ifdef SMARTMIRROR_HARDWARE_DEBUG
+constexpr bool HARDWARE_DEBUG = true;
+#else
+constexpr bool HARDWARE_DEBUG = false;
+#endif
+int debugDistanceMm = -1;
 
 #ifdef SMARTMIRROR_WOKWI
 const char *WIFI_SSID = "Wokwi-GUEST";
@@ -320,8 +326,8 @@ void sendSerialHeartbeat()
 
 void applyLighting()
 {
-  const int screenLevel = lighting.screen(mirrorActive);
-  const int lampLevel = lighting.lamp(mirrorActive);
+  const int screenLevel = HARDWARE_DEBUG ? 180 : lighting.screen(mirrorActive);
+  const int lampLevel = HARDWARE_DEBUG ? 96 : lighting.lamp(mirrorActive);
   const bool wasOn = lampOn;
   lampOn = lampLevel > 0;
   if (lampLevel != lampBrightness)
@@ -368,14 +374,14 @@ void setMirrorActive(bool active)
     sendNumber(TOPIC_STATE_PAGE, displayPage);
 }
 
-// DHT22: doc va gui nhiet do, do am
+// DHT: doc va gui nhiet do, do am
 void readDHT()
 {
   TempAndHumidity data = dht.getTempAndHumidity();
   if (!isfinite(data.temperature) || data.temperature < -40 || data.temperature > 80 ||
       !isfinite(data.humidity) || data.humidity < 0 || data.humidity > 100)
   {
-    Serial.printf("Loi doc DHT22 tai GPIO%d: %s\n", PIN_DHT,
+    Serial.printf("Loi doc DHT tai GPIO%d: %s\n", PIN_DHT,
                   dht.getStatusString());
     return;
   }
@@ -418,6 +424,14 @@ void requestPage(int direction)
 
 void readPageTouch()
 {
+#ifdef SMARTMIRROR_PANEL_UART
+  while (Serial2.available())
+  {
+    const int key = Serial2.read();
+    if (mirrorActive && (key == 0xA1 || key == 0xA2))
+      requestPage(key == 0xA1 ? 1 : -1);
+  }
+#else
   bool down = false;
   int x = 0;
 #ifdef SMARTMIRROR_WOKWI
@@ -451,6 +465,7 @@ void readPageTouch()
     swipeTracking = false;
   }
   touchWasDown = down;
+#endif
 }
 
 int readDistanceMillimeters()
@@ -468,6 +483,7 @@ int readDistanceMillimeters()
 void readPresenceDistance()
 {
   const int millimeters = readDistanceMillimeters();
+  if (HARDWARE_DEBUG) debugDistanceMm = millimeters;
   const unsigned long now = millis();
   if (millimeters < 0)
   {
@@ -521,7 +537,7 @@ void confirmPresence(unsigned long now)
   if (now - lastMotionAt > MOTION_WINDOW)
   {
 #ifdef SMARTMIRROR_WOKWI
-    Serial.println("PIR: HC-SR04 chua xac nhan 3 mau trong pham vi 2 m");
+    Serial.println("PIR: HC-SR04 chua xac nhan 3 mau trong pham vi 1 m");
 #endif
     motionPending = false;
     return;
@@ -705,7 +721,7 @@ void maintainConnections(unsigned long now)
     if (now - lastHeartbeatAt >= HEARTBEAT_INTERVAL)
     {
       lastHeartbeatAt = now;
-      // Heartbeat doc lap voi DHT22 de den van dieu khien duoc khi cam bien loi.
+      // Heartbeat doc lap voi DHT de den van dieu khien duoc khi cam bien loi.
       sendMQTT(TOPIC_STATUS, "online");
       sendNumber(TOPIC_STATE_PAGE, displayPage);
     }
@@ -719,11 +735,17 @@ void setup()
   loadNetworkSettings();
 #endif
   pinMode(PIN_DHT, INPUT_PULLUP);
+#if defined(SMARTMIRROR_DHT_DISABLED)
+  // The DHT module is temporarily out of service.
+#elif defined(SMARTMIRROR_DHT11)
+  dht.setup(PIN_DHT, DHTesp::DHT11);
+#else
   dht.setup(PIN_DHT, DHTesp::DHT22);
+#endif
 #ifdef SMARTMIRROR_WOKWI
   Wire.begin(PIN_TOUCH_SDA, PIN_TOUCH_SCL);
   if (!touchController.begin(40)) Serial.println("Khong tim thay FT6206 touch");
-#else
+#elif !defined(SMARTMIRROR_PANEL_UART)
   SPI.begin(18, PIN_TOUCH_MISO, 23, 16);
   touchController.begin();
   touchController.setRotation(1);
@@ -768,6 +790,7 @@ void setup()
   if (!WIFI_SSID[0] || !MQTT_SERVER[0]) startNetworkSetupPortal();
 #endif
   lastActivityTime = millis();
+  if (HARDWARE_DEBUG) setMirrorActive(true);
   Serial.println("ESP32 da khoi dong");
 }
 
@@ -797,11 +820,13 @@ void loop()
       millis() - lastDistanceSampleAt < 2 * DISTANCE_INTERVAL)
     lastActivityTime = millis();
   maintainConnections(now);
+#ifndef SMARTMIRROR_DHT_DISABLED
   if (millis() - lastDhtRead >= DHT_INTERVAL)
   {
     readDHT();
     lastDhtRead = millis();
   }
+#endif
 
   const unsigned long sensorTime = millis();
   if (sensorTime - lastLightRead >= LIGHT_INTERVAL)
@@ -816,7 +841,7 @@ void loop()
   // Doc lai thoi gian sau khi cam bien cap nhat lastActivityTime.
   // Dung 'now' dau vong lap co the gay tran phep tru unsigned.
   const unsigned long sleepCheckTime = millis();
-  if (mirrorActive && (sleepCheckTime - lastActivityTime >= SLEEP_TIMEOUT ||
+  if (!HARDWARE_DEBUG && mirrorActive && (sleepCheckTime - lastActivityTime >= SLEEP_TIMEOUT ||
                        presenceTimer.expired(sleepCheckTime) ||
                        sleepCheckTime - lastDistanceSampleAt >= DISTANCE_STALE_TIMEOUT))
   {
@@ -842,8 +867,16 @@ void loop()
   if (mirrorActive && displayTime - lastDisplayRefresh >= DISPLAY_INTERVAL)
   {
     lastDisplayRefresh = displayTime;
-    showMirrorDisplay(displayPage, {lastTemperature, lastHumidity, hasFreshTemperature(),
-                                    lampOn, hasControlConnection()});
+    DisplayStatus status{lastTemperature, lastHumidity, hasFreshTemperature(), lampOn, hasControlConnection()};
+    if (HARDWARE_DEBUG)
+    {
+      status.debug = true;
+      status.distanceMm = debugDistanceMm;
+      status.lightRaw = analogRead(PIN_LIGHT_ANALOG);
+      status.dark = digitalRead(PIN_LIGHT_DIGITAL) == HIGH;
+      status.motion = pirWasHigh;
+    }
+    showMirrorDisplay(displayPage, status);
     setMirrorBacklight(static_cast<uint8_t>(displayBrightness));
   }
   delay(10);

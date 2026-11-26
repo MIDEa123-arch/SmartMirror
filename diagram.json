@@ -34,7 +34,7 @@
       "top": 426,
       "left": -166,
       "attrs": {
-        "text": "ECHO nối trực tiếp chỉ trong Wokwi. Lắp thật dùng mạch chia áp."
+        "text": "Wokwi một bo · ECHO nối trực tiếp. Lắp hai bo theo diagram.hardware.json."
       }
     },
     {
@@ -83,7 +83,7 @@
       "top": -100,
       "left": -240,
       "attrs": {
-        "distance": "150"
+        "distance": "70"
       }
     },
     {
@@ -93,7 +93,7 @@
       "left": -385,
       "attrs": {
         "delayTime": "3",
-        "retrigger": "0"
+        "retrigger": "no"
       }
     },
     {

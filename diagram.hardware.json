@@ -39,11 +39,11 @@
     },
     {
       "type": "wokwi-text",
-      "id": "backlight_note",
-      "top": 450,
-      "left": 240,
+      "id": "panel_label",
+      "top": -205,
+      "left": 222,
       "attrs": {
-        "text": "GPIO19 -> driver BL theo bo TFT; không cấp dòng LED từ ESP32."
+        "text": "Bo màn ES3C35P · ký hiệu đại diện ESP32-S3"
       }
     },
     {
@@ -52,7 +52,7 @@
       "top": 306,
       "left": 221,
       "attrs": {
-        "text": "Đèn gương · PWM tự động"
+        "text": "LED đỏ · PWM qua 330 Ω"
       }
     },
     {
@@ -63,11 +63,10 @@
       "attrs": {}
     },
     {
-      "type": "wokwi-ili9341",
-      "id": "tft",
-      "top": -48,
-      "left": 232,
-      "rotate": 90,
+      "type": "board-esp32-s3-devkitc-1",
+      "id": "panel",
+      "top": -120,
+      "left": 260,
       "attrs": {}
     },
     {
@@ -76,6 +75,15 @@
       "top": -220.5,
       "left": -120.6,
       "attrs": {}
+    },
+    {
+      "type": "wokwi-text",
+      "id": "dht_note",
+      "top": -245,
+      "left": -145,
+      "attrs": {
+        "text": "DHT11 · SDA trên ký hiệu là OUT trên module"
+      }
     },
     {
       "type": "wokwi-hc-sr04",
@@ -93,7 +101,7 @@
       "left": -385,
       "attrs": {
         "delayTime": "3",
-        "retrigger": "0"
+        "retrigger": "no"
       }
     },
     {
@@ -139,7 +147,7 @@
       "top": 303,
       "left": 172,
       "attrs": {
-        "color": "blue"
+        "color": "red"
       }
     },
     {
@@ -162,11 +170,20 @@
     },
     {
       "type": "wokwi-text",
-      "id": "touch_note",
-      "top": 474,
-      "left": 220,
+      "id": "uart_label",
+      "top": -175,
+      "left": 222,
       "attrs": {
-        "text": "ILI9488 + XPT2046: CLK18 DIN23 CS16 DO17 · IRQ bỏ trống"
+        "text": "UART 3,3 V · RXD = IO44 · TXD = IO43"
+      }
+    },
+    {
+      "type": "wokwi-text",
+      "id": "panel_power",
+      "top": -145,
+      "left": 222,
+      "attrs": {
+        "text": "Hai cáp USB cấp nguồn · chân 5V trên giắc UART để hở"
       }
     }
   ],
@@ -223,67 +240,22 @@
       ]
     ],
     [
-      "tft:VCC",
-      "bb:tp.24",
-      "orange",
-      [
-        "h-18",
-        "v0"
-      ]
+      "esp:17",
+      "panel:RX",
+      "green",
+      []
     ],
     [
-      "tft:GND",
+      "panel:TX",
+      "esp:16",
+      "purple",
+      []
+    ],
+    [
+      "panel:GND.1",
       "bb:tn.24",
       "black",
-      [
-        "h-24",
-        "v0"
-      ]
-    ],
-    [
-      "tft:CS",
-      "esp:22",
-      "yellow",
-      [
-        "h-32",
-        "v0"
-      ]
-    ],
-    [
-      "tft:D/C",
-      "esp:25",
-      "blue",
-      [
-        "h-38",
-        "v0"
-      ]
-    ],
-    [
-      "tft:RST",
-      "esp:4",
-      "orange",
-      [
-        "h-43",
-        "v0"
-      ]
-    ],
-    [
-      "tft:MOSI",
-      "esp:23",
-      "green",
-      [
-        "h-44",
-        "v0"
-      ]
-    ],
-    [
-      "tft:SCK",
-      "esp:18",
-      "purple",
-      [
-        "h-50",
-        "v0"
-      ]
+      []
     ],
     [
       "dht1:VCC",
