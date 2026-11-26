@@ -53,7 +53,8 @@ function run(exe, args, input) {
   const leaf = await selfsigned.generate([{name:'commonName',value:host}], {
     keySize:2048, algorithm:'sha256', ca:{key:ca.private,cert:ca.cert},
     notAfterDate:new Date(Date.now()+397*86400000),
-    extensions:[{name:'basicConstraints',cA:false,critical:true},{name:'keyUsage',digitalSignature:true,keyEncipherment:true,critical:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:7,ip:host},{type:2,value:'host.wokwi.internal'}]}]
+    // Arduino ESP32's mbed TLS can match a numeric host against a DNS SAN.
+    extensions:[{name:'basicConstraints',cA:false,critical:true},{name:'keyUsage',digitalSignature:true,keyEncipherment:true,critical:true},{name:'extKeyUsage',serverAuth:true},{name:'subjectAltName',altNames:[{type:7,ip:host},{type:2,value:host},{type:2,value:'host.wokwi.internal'}]}]
   });
   fs.writeFileSync(certFile,leaf.cert,{mode:0o644});
   fs.writeFileSync(keyFile,leaf.private,{mode:0o600});

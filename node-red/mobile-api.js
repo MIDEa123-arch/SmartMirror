@@ -20,10 +20,31 @@ const validTitle = value => typeof value === 'string' && value.trim().length > 0
 const validAt = value => Number.isSafeInteger(value) && value > 0 && value < 4102444800000;
 const stateMessage = (action, properties) => ({topic:'ui',payload:{action,...properties}});
 
+if (msg.req?.path === '/api/calendar/weather/search') {
+    const query = typeof msg.req.query?.q === 'string' ? msg.req.query.q.trim() : '';
+    if (query.length < 2 || query.length > 80)
+        return json(400, {error:'Nhập tên địa điểm từ 2 đến 80 ký tự.'});
+    global.get('searchWeatherPlaces')(query)
+        .then(places => node.send(json(200, {places})))
+        .catch(() => node.send(json(502, {error:'Chưa tìm được địa điểm. Thử lại sau.'})))
+        .finally(() => node.done());
+    return;
+}
+
+if (msg.req?.path === '/api/calendar/weather/location') {
+    const {lat, lon, name} = body;
+    if (!Number.isFinite(lat) || Math.abs(lat) > 90 || !Number.isFinite(lon) ||
+        Math.abs(lon) > 180 || !validTitle(name))
+        return json(400, {error:'Địa điểm không hợp lệ.'});
+    const location = {lat, lon, name:name.trim()};
+    return json(200, {location}, stateMessage('location', location));
+}
+
 if (method === 'GET') {
     return json(200, {
         tasks:tasks.map(t => ({id:t.id,title:t.title,at:t.at,done:!!t.done})),
         serverTime:Date.now(),
+        location:mirror.location ?? saved.location ?? null,
         device:{
             online,
             active:!!mirror.active,

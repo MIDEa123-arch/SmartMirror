@@ -170,7 +170,7 @@ void fillWeather(String (&rows)[ROWS], String &footer, bool fresh, unsigned long
   footer = "Vuốt trái / phải để đổi trang";
 }
 
-void fillReminders(String (&rows)[ROWS], String &footer, bool fresh, time_t utc)
+void fillReminders(String (&rows)[ROWS], String &footer, bool fresh)
 {
   rows[0] = "Lịch hoạt động hôm nay";
   if (!fresh)
@@ -183,8 +183,6 @@ void fillReminders(String (&rows)[ROWS], String &footer, bool fresh, time_t utc)
     for (uint8_t i = 0; i < content.taskCount && row < ROWS; ++i)
     {
       const auto &task = content.tasks[i];
-      if (utc && task.at < utc - 60)
-        continue;
       rows[row++] = localDate(task.at, "%H:%M") + "  " + task.title;
     }
     if (row == 1)
@@ -313,7 +311,7 @@ void showMirrorDisplay(uint8_t page, const DisplayStatus &status)
   else if (page == 1)
     fillWeather(rows, footer, fresh, elapsed);
   else
-    fillReminders(rows, footer, fresh, utc);
+    fillReminders(rows, footer, fresh);
 
   if (!displayAwake)
   {

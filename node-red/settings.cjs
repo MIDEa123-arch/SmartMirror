@@ -36,6 +36,19 @@ module.exports = {
     },
     httpStatic: path.resolve(__dirname, 'public'),
     flowFile: path.resolve(__dirname, '../.runtime/flows.json'),
+    functionGlobalContext: {
+        async searchWeatherPlaces(query) {
+            const url = new URL('https://geocoding-api.open-meteo.com/v1/search');
+            url.search = new URLSearchParams({name:query,count:'5',language:'vi',format:'json'});
+            const response = await fetch(url, {signal:AbortSignal.timeout(7000)});
+            if (!response.ok) throw new Error('Geocoding request failed');
+            const result = await response.json();
+            return (result.results || []).map(p => ({
+                name:[p.name,p.admin1,p.country].filter(Boolean).join(', '),
+                lat:p.latitude,lon:p.longitude
+            }));
+        }
+    },
     contextStorage: { default:'memoryOnly', memoryOnly:{module:'memory'}, file:{module:'localfilesystem'} },
     editorTheme: { projects:{enabled:false} },
     logging: {console:{level:'info',metrics:false,audit:false}}

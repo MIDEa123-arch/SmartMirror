@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 
 import '../models/calendar_event.dart';
 
+typedef WeatherPlace = ({String name, double lat, double lon});
+
 class CalendarApi {
   CalendarApi._(this._token, this._client);
 
@@ -63,6 +65,37 @@ class CalendarApi {
       path: '${_calendarUri.path}/${Uri.encodeComponent(id)}',
     );
     await _request('DELETE', uri);
+  }
+
+  Future<String?> weatherLocation() async {
+    final data = await _request('GET', _calendarUri);
+    final location = data['location'];
+    return location is Map<String, dynamic> ? location['name'] as String? : null;
+  }
+
+  Future<List<WeatherPlace>> searchWeatherPlaces(String query) async {
+    final uri = _calendarUri.replace(
+      path: '${_calendarUri.path}/weather/search',
+      queryParameters: {'q': query},
+    );
+    final data = await _request('GET', uri);
+    return (data['places'] as List<dynamic>)
+        .whereType<Map<String, dynamic>>()
+        .map((p) => (
+              name: p['name'] as String,
+              lat: (p['lat'] as num).toDouble(),
+              lon: (p['lon'] as num).toDouble(),
+            ))
+        .toList();
+  }
+
+  Future<void> setWeatherLocation(WeatherPlace place) async {
+    final uri = _calendarUri.replace(path: '${_calendarUri.path}/weather/location');
+    await _request('PUT', uri, {
+      'name': place.name,
+      'lat': place.lat,
+      'lon': place.lon,
+    });
   }
 
   Future<Map<String, dynamic>> _request(

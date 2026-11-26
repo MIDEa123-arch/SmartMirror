@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/calendar_event.dart';
 import '../services/calendar_api.dart';
+import 'weather_location_screen.dart';
 
 const _teal = Color(0xFF176B5B);
 const _muted = Color(0xFF71817C);
@@ -206,6 +207,15 @@ class _CalendarScreenState extends State<CalendarScreen> with WidgetsBindingObse
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'Vị trí thời tiết',
+            onPressed: _api == null
+                ? null
+                : () => Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => WeatherLocationScreen(api: _api!),
+                  )),
+            icon: const Icon(Icons.location_on_outlined),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Hủy'),

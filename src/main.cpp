@@ -35,7 +35,7 @@ XPT2046_Touchscreen touchController(16);
 #endif
 
 #ifndef SMARTMIRROR_MQTT_CA_CERT
-#if !defined(SMARTMIRROR_WOKWI) && defined(MOSQUITTO_LOCAL_CA_CERT)
+#if !defined(SMARTMIRROR_WOKWI) && __has_include("mosquitto_local_ca.h")
 #define SMARTMIRROR_MQTT_CA_CERT MOSQUITTO_LOCAL_CA_CERT
 #else
 #define SMARTMIRROR_MQTT_CA_CERT EMQX_PUBLIC_CA_CERT
@@ -97,6 +97,7 @@ int debugDistanceMm = -1;
 
 #ifdef SMARTMIRROR_WOKWI
 const char *WIFI_SSID = "Wokwi-GUEST";
+constexpr int WIFI_CHANNEL = 6;
 const char *WIFI_PASSWORD = "";
 #ifdef SMARTMIRROR_WOKWI_MQTT_HOST
 const char *MQTT_SERVER = SMARTMIRROR_WOKWI_MQTT_HOST;
@@ -117,6 +118,7 @@ constexpr int MQTT_PORT = 8883;
 #define SMARTMIRROR_MQTT_USER ""
 #define SMARTMIRROR_MQTT_PASSWORD ""
 #endif
+constexpr int WIFI_CHANNEL = 0; // Scan for the configured access point.
 char WIFI_SSID[33] = SMARTMIRROR_WIFI_SSID;
 char WIFI_PASSWORD[65] = SMARTMIRROR_WIFI_PASSWORD;
 char MQTT_SERVER[64] = SMARTMIRROR_MQTT_HOST;
@@ -238,6 +240,17 @@ void startNetworkSetupPortal()
 
 void loadNetworkSettings()
 {
+#ifdef SMARTMIRROR_MQTT_PROVISION_REVISION
+  if (networkPreferences.begin("sm-network", false))
+  {
+    if (networkPreferences.getUInt("mqtt-revision") != SMARTMIRROR_MQTT_PROVISION_REVISION &&
+        networkPreferences.putString("host", SMARTMIRROR_MQTT_HOST) &&
+        networkPreferences.putString("user", SMARTMIRROR_MQTT_USER) &&
+        networkPreferences.putString("pass", SMARTMIRROR_MQTT_PASSWORD))
+      networkPreferences.putUInt("mqtt-revision", SMARTMIRROR_MQTT_PROVISION_REVISION);
+    networkPreferences.end();
+  }
+#endif
   networkPreferences.begin("sm-network",true);
   if(networkPreferences.isKey("ssid")) networkPreferences.getString("ssid",WIFI_SSID,sizeof(WIFI_SSID));
   if(networkPreferences.isKey("wifi")) networkPreferences.getString("wifi",WIFI_PASSWORD,sizeof(WIFI_PASSWORD));
@@ -638,7 +651,7 @@ void maintainConnections(unsigned long now)
     {
       lastWiFiAttempt = now;
       Serial.println("Dang thu ket noi lai Wi-Fi...");
-      WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
+      WiFi.begin(WIFI_SSID, WIFI_PASSWORD, WIFI_CHANNEL);
     }
 #ifndef SMARTMIRROR_WOKWI
     if (!setupPortalActive && wifiStartedAt && now - wifiStartedAt >= 45000UL)
@@ -650,6 +663,7 @@ void maintainConnections(unsigned long now)
   if (!clockStarted)
   {
     clockStarted = true;
+    Serial.printf("Wi-Fi da ket noi, IP: %s\n", WiFi.localIP().toString().c_str());
     configTime(0, 0, "time.google.com", "pool.ntp.org");
   }
   if (!MQTT_SERVER[0])
@@ -783,7 +797,7 @@ void setup()
   mqtt.setWill(TOPIC_STATUS, "offline", true, 1);
   WiFi.mode(WIFI_STA);
   if (WIFI_SSID[0])
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD, 6);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD, WIFI_CHANNEL);
   lastWiFiAttempt = millis();
   wifiStartedAt = lastWiFiAttempt;
 #ifndef SMARTMIRROR_WOKWI

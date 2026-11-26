@@ -59,7 +59,9 @@ for (const [id,name,url,method,y] of [
     ['sm-api-get','Đọc lịch','/api/calendar','get',470],
     ['sm-api-post','Thêm hoạt động','/api/calendar','post',520],
     ['sm-api-put','Sửa / hoàn tất','/api/calendar/:id','put',570],
-    ['sm-api-delete','Xóa hoạt động','/api/calendar/:id','delete',620]
+    ['sm-api-delete','Xóa hoạt động','/api/calendar/:id','delete',620],
+    ['sm-api-weather-search','Tìm địa điểm','/api/calendar/weather/search','get',660],
+    ['sm-api-weather-location','Đổi địa điểm','/api/calendar/weather/location','put',700]
 ]) add({id,type:'http in',z:tab,name,url,method,upload:false,swaggerDoc:'',x:180,y,wires:[['sm-mobile-api']]});
 add({id:'sm-api-response',type:'http response',z:tab,name:'Phản hồi JSON cho ứng dụng',statusCode:'',headers:{},x:800,y:550,wires:[]});
 if (process.env.SMARTMIRROR_SERIAL_PORT) {
